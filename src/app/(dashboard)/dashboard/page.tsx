@@ -1,7 +1,27 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import DashboardClient from "./DashboardClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
+  // Demo mode: return dummy data if no Supabase configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl || supabaseUrl === "https://placeholder.supabase.co") {
+    return (
+      <DashboardClient
+        siswaCount={10}
+        guruCount={5}
+        kelasCount={1}
+        mapelCount={3}
+        raportLengkap={7}
+        raportBelum={3}
+        nilaiPerKelas={[
+          { nama: "IV-A", rataRata: 82 },
+        ]}
+      />
+    );
+  }
+
+  const { createServerSupabaseClient } = await import("@/lib/supabase/server");
   const supabase = createServerSupabaseClient();
 
   const [
@@ -18,10 +38,8 @@ export default async function DashboardPage() {
     supabase.from("deskripsi_rapor").select("*", { count: "exact", head: true }).not("deskripsi_text", "is", null),
   ]);
 
-  // Get total siswa for raport belum lengkap calculation
   const raportBelum = (siswaCount || 0) - (raportLengkap || 0);
 
-  // Get rata-rata nilai per kelas
   const { data: kelasData } = await supabase.from("kelas").select("id, nama_rombel");
   const nilaiPerKelas: { nama: string; rataRata: number }[] = [];
 
