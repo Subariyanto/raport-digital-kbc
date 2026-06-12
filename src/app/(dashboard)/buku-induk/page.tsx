@@ -1,8 +1,7 @@
 "use client";
-
 import dynamic from "next/dynamic";
 
-const DashboardClient = dynamic(() => import("./DashboardClient"), {
+const PageClient = dynamic(() => import("./PageClient"), { 
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -12,5 +11,5 @@ const DashboardClient = dynamic(() => import("./DashboardClient"), {
 });
 
 export default function Page() {
-  return <DashboardClient />;
+  return <PageClient />;
 }

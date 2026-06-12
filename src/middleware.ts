@@ -1,12 +1,13 @@
-import { updateSession } from "@/lib/supabase/middleware";
-import { type NextRequest } from "next/server";
+// Middleware disabled for static export / demo mode
+// Re-enable when using Supabase in production
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+import { type NextRequest, NextResponse } from "next/server";
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function middleware(_request: NextRequest) {
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: [],
 };

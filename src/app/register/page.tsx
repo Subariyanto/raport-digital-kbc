@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-const LoginClient = dynamic(() => import("./LoginClient"), {
+const RegisterClient = dynamic(() => import("./RegisterClient"), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen flex items-center justify-center">
@@ -11,6 +11,6 @@ const LoginClient = dynamic(() => import("./LoginClient"), {
   ),
 });
 
-export default function LoginPage() {
-  return <LoginClient />;
+export default function RegisterPage() {
+  return <RegisterClient />;
 }
