@@ -200,6 +200,17 @@ export default function Sidebar() {
               Keluar
             </button>
           </div>
+
+          {/* Credit footer */}
+          <div className="px-4 py-3 border-t border-primary-800 text-center">
+            <p className="text-[10px] text-primary-300 leading-tight">Dibuat Oleh:</p>
+            <p className="text-[11px] font-semibold text-primary-100 leading-tight mt-0.5">
+              Subariyanto, S.Pd, M.Pd.I.
+            </p>
+            <p className="text-[10px] text-primary-300 leading-tight">
+              Ketua Pokjawas Kab. Jember
+            </p>
+          </div>
         </div>
       </aside>
     </>
