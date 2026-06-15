@@ -91,6 +91,18 @@ export default function LoginClient() {
             </Link>
           </div>
 
+          <p className="text-center text-xs text-gray-600 mt-4 bg-gray-50 border border-gray-200 rounded p-2.5">
+            Belum punya akun? Hubungi Admin:{" "}
+            <a
+              href="https://wa.me/6282330647698"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-primary-700 hover:underline"
+            >
+              0823-3064-7698
+            </a>
+          </p>
+
           <p className="text-center text-xs text-gray-400 mt-6">
             Kurikulum Berbasis Cinta &bull; Kemenag 2026
           </p>
