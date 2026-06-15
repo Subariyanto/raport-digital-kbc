@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { CodeStore, fillTemplate, buildWhatsappLink, type ActivationCode, type CodePrefix, MASTER_CODE } from "@/lib/codes";
 import { AdminGuard, AdminTabs } from "@/components/AdminShell";
-import { Copy, MessageCircle, Trash2, Ban, RotateCcw, RefreshCw, Plus } from "lucide-react";
+import { Copy, MessageCircle, Trash2, Ban, RotateCcw, RefreshCw, Plus, Pencil, Save, X } from "lucide-react";
 
 function CodesClient() {
   const [list, setList] = useState<ActivationCode[]>([]);
@@ -13,6 +13,14 @@ function CodesClient() {
   const [prefix, setPrefix] = useState<CodePrefix>("FULL");
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "used" | "revoked">("all");
+  const [editing, setEditing] = useState<ActivationCode | null>(null);
+  const [editForm, setEditForm] = useState<{ usedByNama: string; usedByNip: string; status: "active" | "used" | "revoked"; usedAt: string; note: string }>({
+    usedByNama: "",
+    usedByNip: "",
+    status: "active",
+    usedAt: "",
+    note: "",
+  });
 
   useEffect(() => {
     setList(CodeStore.list());
@@ -65,6 +73,42 @@ function CodesClient() {
     if (!confirm(`Hapus kode ${rec.code}?`)) return;
     CodeStore.remove(rec.code);
     toast.success("Kode dihapus");
+    refresh();
+  };
+
+  const openEdit = (rec: ActivationCode) => {
+    setEditing(rec);
+    setEditForm({
+      usedByNama: rec.usedByNama || "",
+      usedByNip: rec.usedByNip || "",
+      status: rec.status,
+      usedAt: rec.usedAt ? new Date(rec.usedAt).toISOString().slice(0, 16) : "",
+      note: rec.note || "",
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editing) return;
+    const f = editForm;
+    const patch: Partial<ActivationCode> = {
+      usedByNama: f.usedByNama.trim() || null,
+      usedByNip: f.usedByNip.trim() || null,
+      status: f.status,
+      note: f.note.trim() || null,
+    };
+    // Auto-set status & usedAt jika nama diisi tapi status masih active
+    if (f.usedByNama.trim() && f.status === "active") {
+      patch.status = "used";
+      patch.usedAt = f.usedAt ? new Date(f.usedAt).toISOString() : new Date().toISOString();
+    } else if (f.status === "used") {
+      patch.usedAt = f.usedAt ? new Date(f.usedAt).toISOString() : (editing.usedAt || new Date().toISOString());
+    } else if (f.status !== "used") {
+      patch.usedAt = null;
+      // kalau bukan used, kosongkan pemakai juga? Biarkan user yang putuskan—jangan auto-clear
+    }
+    CodeStore.update(editing.code, patch);
+    toast.success("Kode diperbarui & sync ke cloud");
+    setEditing(null);
     refresh();
   };
 
@@ -224,6 +268,13 @@ function CodesClient() {
                 <td className="px-3 py-2.5 text-xs text-gray-500">{c.note || "—"}</td>
                 <td className="px-3 py-2.5 text-right space-x-1">
                   <button
+                    title="Edit pemakai/status"
+                    onClick={() => openEdit(c)}
+                    className="inline-flex items-center justify-center w-7 h-7 rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  <button
                     title="Copy"
                     onClick={() => handleCopy(c.code)}
                     className="inline-flex items-center justify-center w-7 h-7 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -275,6 +326,91 @@ function CodesClient() {
           </tbody>
         </table>
       </div>
+
+      {/* Edit modal */}
+      {editing && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-5 py-3 border-b">
+              <h3 className="font-semibold text-gray-800">Edit Kode <span className="font-mono text-xs text-gray-500">{editing.code}</span></h3>
+              <button onClick={() => setEditing(null)} className="text-gray-500 hover:text-gray-800">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Nama Pemakai</label>
+                <input
+                  value={editForm.usedByNama}
+                  onChange={(e) => setEditForm((f) => ({ ...f, usedByNama: e.target.value }))}
+                  placeholder="cth: Ahmad Fauzi"
+                  className="w-full px-3 py-2 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">NIP / ID Pemakai</label>
+                <input
+                  value={editForm.usedByNip}
+                  onChange={(e) => setEditForm((f) => ({ ...f, usedByNip: e.target.value.replace(/\D/g, "") }))}
+                  placeholder="18 digit"
+                  inputMode="numeric"
+                  maxLength={18}
+                  className="w-full px-3 py-2 border rounded text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as "active" | "used" | "revoked" }))}
+                    className="w-full px-3 py-2 border rounded text-sm"
+                  >
+                    <option value="active">Aktif</option>
+                    <option value="used">Terpakai</option>
+                    <option value="revoked">Dicabut</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Tanggal Pakai</label>
+                  <input
+                    type="datetime-local"
+                    value={editForm.usedAt}
+                    onChange={(e) => setEditForm((f) => ({ ...f, usedAt: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Catatan</label>
+                <input
+                  value={editForm.note}
+                  onChange={(e) => setEditForm((f) => ({ ...f, note: e.target.value }))}
+                  placeholder="Opsional"
+                  className="w-full px-3 py-2 border rounded text-sm"
+                />
+              </div>
+              <p className="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded p-2">
+                💡 Kalau Bapak isi nama pemakai dan status masih Aktif, sistem otomatis ubah status jadi Terpakai dengan tanggal sekarang.
+              </p>
+            </div>
+            <div className="px-5 py-3 border-t flex items-center justify-end gap-2">
+              <button
+                onClick={() => setEditing(null)}
+                className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded inline-flex items-center gap-1.5"
+              >
+                <Save size={14} /> Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

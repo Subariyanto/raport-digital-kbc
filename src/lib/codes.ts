@@ -214,6 +214,27 @@ export const CodeStore = {
     writeCodes(all);
   },
 
+  update(code: string, patch: Partial<ActivationCode>) {
+    const all = readCodes();
+    const upper = code.toUpperCase();
+    const idx = all.findIndex((c) => c.code.toUpperCase() === upper);
+    if (idx < 0) {
+      // Adopt dari remote kalau ada (sama seperti markUsed)
+      const w = safeWindow();
+      if (w && Array.isArray(w.RDMKBC_REMOTE_CODES)) {
+        const remote = w.RDMKBC_REMOTE_CODES.find((c) => c.code.toUpperCase() === upper);
+        if (remote) {
+          all.push({ ...remote, ...patch, code: remote.code });
+          writeCodes(all);
+          return;
+        }
+      }
+      return;
+    }
+    all[idx] = { ...all[idx], ...patch, code: all[idx].code };
+    writeCodes(all);
+  },
+
   // Purchase settings
   getPurchase(): PurchaseSettings {
     const w = safeWindow();
