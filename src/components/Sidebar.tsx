@@ -26,6 +26,7 @@ import {
   KeyRound,
   ShoppingCart,
   ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 import { Auth, type AppUser } from "@/lib/auth";
 import { Tier } from "@/lib/tier";
@@ -50,6 +51,7 @@ const baseMenu: MenuItem[] = [
   { label: "Deskripsi Otomatis", href: "/deskripsi-otomatis", icon: <PenTool size={20} /> },
   { label: "Presensi", href: "/presensi", icon: <CalendarCheck size={20} /> },
   { label: "Ekstrakurikuler", href: "/ekstrakurikuler", icon: <Trophy size={20} /> },
+  { label: "Kokurikuler", href: "/kokurikuler", icon: <Sparkles size={20} /> },
   { label: "Catatan Wali Kelas", href: "/catatan-wali-kelas", icon: <MessageSquare size={20} /> },
   { label: "Validasi Raport", href: "/validasi-rapor", icon: <ShieldCheck size={20} /> },
   { label: "Cetak Raport", href: "/cetak-raport", icon: <FileText size={20} /> },

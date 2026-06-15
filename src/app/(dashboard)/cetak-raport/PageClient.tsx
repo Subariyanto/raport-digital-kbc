@@ -2,8 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { demoStore } from "@/lib/demo-store";
-import { Siswa, Kelas, MataPelajaran } from "@/lib/types";
+import { Siswa, Kelas } from "@/lib/types";
+import { nilaiToPredikat } from "@/lib/deskripsi-generator";
 import { Printer } from "lucide-react";
+
+// Helper: baca deskripsi aux (kokurikuler / ekstrakurikuler) dari localStorage
+function readAux(key: string): Array<{
+  id: string;
+  siswa_id: string;
+  kelas_id: string;
+  deskripsi_text: string | null;
+}> {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(`rdm_${key}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function CetakRaportPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
@@ -30,23 +47,39 @@ export default function CetakRaportPage() {
     const allDeskripsi = demoStore.getDeskripsi();
     const allPresensi = demoStore.getPresensi();
     const allEkskul = demoStore.getEkskul();
+    const allKoko = demoStore.getKokurikuler();
     const allCatatan = demoStore.getCatatan();
-    const allTp = demoStore.getTP();
-    const allCp = demoStore.getCP();
 
     // Build nilai per mapel
     const nilaiPerMapel = mapelList.map(mapel => {
       const nilaiSiswa = allNilai.filter(n => n.siswa_id === selectedSiswa && n.mapel_id === mapel.id && n.kelas_id === selectedKelas);
       const avg = nilaiSiswa.length > 0 ? Math.round(nilaiSiswa.reduce((sum, n) => sum + (n.nilai_akhir || 0), 0) / nilaiSiswa.length) : null;
       const deskripsi = allDeskripsi.find(d => d.siswa_id === selectedSiswa && d.mapel_id === mapel.id && d.kelas_id === selectedKelas);
-      return { mapel: mapel.nama, kelompok: mapel.kelompok, nilai: avg, predikat: avg ? (avg >= 90 ? "A" : avg >= 80 ? "B" : avg >= 70 ? "C" : "D") : "-", deskripsi: deskripsi?.deskripsi_text || "" };
+      const pred = nilaiToPredikat(avg);
+      return {
+        mapel: mapel.nama,
+        kelompok: mapel.kelompok,
+        nilai: avg,
+        predikat: pred.huruf,
+        predikatLabel: pred.label,
+        deskripsi: deskripsi?.deskripsi_text || "",
+      };
     });
 
     const presensi = allPresensi.find(p => p.siswa_id === selectedSiswa && p.kelas_id === selectedKelas);
-    const ekskul = allEkskul.filter(e => e.siswa_id === selectedSiswa);
+    const ekskul = allEkskul.filter(e => e.siswa_id === selectedSiswa && e.kelas_id === selectedKelas);
+    const koko = allKoko.filter(k => k.siswa_id === selectedSiswa && k.kelas_id === selectedKelas);
     const catatan = allCatatan.find(c => c.siswa_id === selectedSiswa && c.kelas_id === selectedKelas);
 
-    setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, catatan });
+    // Deskripsi naratif kokurikuler & ekstrakurikuler (dari menu Deskripsi Otomatis, kalau sudah disimpan)
+    const deskKoko = readAux("deskripsi_kokurikuler").find(
+      d => d.siswa_id === selectedSiswa && d.kelas_id === selectedKelas
+    )?.deskripsi_text || "";
+    const deskEks = readAux("deskripsi_ekstrakurikuler").find(
+      d => d.siswa_id === selectedSiswa && d.kelas_id === selectedKelas
+    )?.deskripsi_text || "";
+
+    setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks });
   }, [selectedSiswa, selectedKelas]);
 
   const handlePrint = () => { window.print(); };
@@ -105,8 +138,8 @@ export default function CetakRaportPage() {
             <div className="flex"><span className="w-32 text-gray-600">Tahun Pelajaran</span><span>: {raportData.kelas?.tahun_pelajaran}</span></div>
           </div>
 
-          {/* Nilai */}
-          <h4 className="font-bold text-sm mb-2">A. NILAI AKADEMIK</h4>
+          {/* Nilai Akademik (Intrakurikuler) */}
+          <h4 className="font-bold text-sm mb-2">A. NILAI AKADEMIK (INTRAKURIKULER)</h4>
           <table className="w-full text-sm border border-gray-300 mb-6">
             <thead>
               <tr className="bg-gray-100">
@@ -130,35 +163,82 @@ export default function CetakRaportPage() {
             </tbody>
           </table>
 
+          {/* Kokurikuler */}
+          <h4 className="font-bold text-sm mb-2">B. KOKURIKULER (Projek Penguatan Profil Pelajar Pancasila Rahmatan lil Alamin)</h4>
+          <table className="w-full text-sm border border-gray-300 mb-2">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-2 py-1 text-left">No</th>
+                <th className="border border-gray-300 px-2 py-1 text-left">Nama Kegiatan / Proyek</th>
+                <th className="border border-gray-300 px-2 py-1 text-center">Nilai</th>
+                <th className="border border-gray-300 px-2 py-1 text-center">Predikat</th>
+                <th className="border border-gray-300 px-2 py-1 text-left">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {raportData.koko.length === 0 ? (
+                <tr><td colSpan={5} className="border border-gray-300 px-2 py-1 text-center text-gray-400">-</td></tr>
+              ) : (
+                raportData.koko.map((k: any, idx: number) => {
+                  const pred = nilaiToPredikat(k.nilai ?? null);
+                  return (
+                    <tr key={idx}>
+                      <td className="border border-gray-300 px-2 py-1">{idx + 1}</td>
+                      <td className="border border-gray-300 px-2 py-1">{k.nama_kegiatan}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{k.nilai ?? "-"}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{pred.label}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-xs">{k.keterangan || "-"}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+          {raportData.deskKoko && (
+            <div className="text-xs text-gray-700 italic mb-6 px-1">{raportData.deskKoko}</div>
+          )}
+          {!raportData.deskKoko && <div className="mb-6"></div>}
+
           {/* Ekskul */}
-          <h4 className="font-bold text-sm mb-2">B. EKSTRAKURIKULER</h4>
-          <table className="w-full text-sm border border-gray-300 mb-6">
+          <h4 className="font-bold text-sm mb-2">C. EKSTRAKURIKULER</h4>
+          <table className="w-full text-sm border border-gray-300 mb-2">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border border-gray-300 px-2 py-1 text-left">No</th>
                 <th className="border border-gray-300 px-2 py-1 text-left">Kegiatan</th>
+                <th className="border border-gray-300 px-2 py-1 text-center">Nilai</th>
                 <th className="border border-gray-300 px-2 py-1 text-center">Predikat</th>
                 <th className="border border-gray-300 px-2 py-1 text-left">Keterangan</th>
               </tr>
             </thead>
             <tbody>
               {raportData.ekskul.length === 0 ? (
-                <tr><td colSpan={4} className="border border-gray-300 px-2 py-1 text-center text-gray-400">-</td></tr>
+                <tr><td colSpan={5} className="border border-gray-300 px-2 py-1 text-center text-gray-400">-</td></tr>
               ) : (
-                  raportData.ekskul.map((ek: any, idx: number) => (
-                  <tr key={idx}>
-                    <td className="border border-gray-300 px-2 py-1">{idx + 1}</td>
-                    <td className="border border-gray-300 px-2 py-1">{ek.nama_kegiatan}</td>
-                    <td className="border border-gray-300 px-2 py-1 text-center">{ek.predikat || "-"}</td>
-                    <td className="border border-gray-300 px-2 py-1 text-xs">{ek.keterangan || "-"}</td>
-                  </tr>
-                ))
+                raportData.ekskul.map((ek: any, idx: number) => {
+                  const pred = nilaiToPredikat(ek.nilai ?? null);
+                  // fallback: kalau nilai null tapi predikat lama (string) ada, pakai itu
+                  const labelTampil = pred.label !== "-" ? pred.label : (ek.predikat || "-");
+                  return (
+                    <tr key={idx}>
+                      <td className="border border-gray-300 px-2 py-1">{idx + 1}</td>
+                      <td className="border border-gray-300 px-2 py-1">{ek.nama_kegiatan}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{ek.nilai ?? "-"}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{labelTampil}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-xs">{ek.keterangan || "-"}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
+          {raportData.deskEks && (
+            <div className="text-xs text-gray-700 italic mb-6 px-1">{raportData.deskEks}</div>
+          )}
+          {!raportData.deskEks && <div className="mb-6"></div>}
 
           {/* Presensi */}
-          <h4 className="font-bold text-sm mb-2">C. KETIDAKHADIRAN</h4>
+          <h4 className="font-bold text-sm mb-2">D. KETIDAKHADIRAN</h4>
           <div className="grid grid-cols-4 gap-2 text-sm mb-6">
             <div className="border border-gray-300 px-3 py-2 text-center"><p className="text-gray-600 text-xs">Sakit</p><p className="font-bold">{raportData.presensi?.sakit ?? 0} hari</p></div>
             <div className="border border-gray-300 px-3 py-2 text-center"><p className="text-gray-600 text-xs">Izin</p><p className="font-bold">{raportData.presensi?.izin ?? 0} hari</p></div>
@@ -167,7 +247,7 @@ export default function CetakRaportPage() {
           </div>
 
           {/* Catatan */}
-          <h4 className="font-bold text-sm mb-2">D. CATATAN WALI KELAS</h4>
+          <h4 className="font-bold text-sm mb-2">E. CATATAN WALI KELAS</h4>
           <div className="border border-gray-300 p-3 rounded text-sm mb-6 min-h-[60px]">
             {raportData.catatan?.catatan || <span className="text-gray-400">Belum ada catatan</span>}
           </div>

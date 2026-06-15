@@ -1,7 +1,18 @@
 // Generator Deskripsi Raport Otomatis - Utility Functions
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { Nilai, TujuanPembelajaran } from "@/lib/types";
+import { Nilai, TujuanPembelajaran, PredikatLabel } from "@/lib/types";
+
+// ========================================
+// Helper: nilai 0-100 -> predikat huruf + label
+// ========================================
+export function nilaiToPredikat(nilai: number | null | undefined): { huruf: string; label: PredikatLabel | "-" } {
+  if (nilai === null || nilai === undefined || isNaN(nilai)) return { huruf: "-", label: "-" };
+  if (nilai >= 90) return { huruf: "A", label: "Sangat Baik" };
+  if (nilai >= 80) return { huruf: "B", label: "Baik" };
+  if (nilai >= 70) return { huruf: "C", label: "Cukup" };
+  return { huruf: "D", label: "Kurang" };
+}
 
 interface GenerateParams {
   namaSiswa: string;
@@ -92,6 +103,83 @@ export function getPredikat(nilai: number): string {
   if (nilai >= 70) return "C";
   if (nilai >= 60) return "D";
   return "E";
+}
+
+// ========================================
+// Generator deskripsi Kokurikuler & Ekstrakurikuler
+// ========================================
+interface KegiatanItem {
+  nama_kegiatan: string;
+  nilai: number | null;
+  keterangan?: string | null;
+}
+
+export function generateDeskripsiKokurikuler(params: {
+  namaSiswa: string;
+  kegiatan: KegiatanItem[];
+}): string {
+  const { namaSiswa, kegiatan } = params;
+  const nama = `Ananda ${namaSiswa}`;
+  if (!kegiatan || kegiatan.length === 0) {
+    return `${nama} belum tercatat mengikuti kegiatan kokurikuler pada semester ini.`;
+  }
+
+  // Cari kegiatan dengan nilai tertinggi (kalau ada nilai)
+  const withNilai = kegiatan.filter(k => k.nilai !== null && k.nilai !== undefined);
+  const tertinggi = withNilai.length > 0
+    ? withNilai.reduce((acc, cur) => (cur.nilai! > (acc.nilai ?? 0) ? cur : acc))
+    : null;
+  const rataRata = withNilai.length > 0
+    ? Math.round(withNilai.reduce((s, k) => s + (k.nilai || 0), 0) / withNilai.length)
+    : null;
+
+  const daftar = kegiatan.map(k => k.nama_kegiatan).join(", ");
+  const labelTertinggi = tertinggi ? nilaiToPredikat(tertinggi.nilai).label : null;
+
+  if (rataRata !== null && rataRata >= 85) {
+    return `${nama} menunjukkan partisipasi yang sangat aktif dan kreatif dalam kegiatan kokurikuler ${daftar}. Penampilan dan hasil karya pada kegiatan ${tertinggi?.nama_kegiatan} terbilang ${labelTertinggi?.toLowerCase()}, mencerminkan kemandirian, kerja sama, serta penerapan dimensi Profil Pelajar Pancasila Rahmatan lil Alamin secara nyata. Pertahankan semangat berkarya.`;
+  }
+  if (rataRata !== null && rataRata >= 70) {
+    return `${nama} terlibat dengan baik dalam kegiatan kokurikuler ${daftar}. Pada ${tertinggi?.nama_kegiatan}, ${nama} menunjukkan capaian yang ${labelTertinggi?.toLowerCase()}. Dorongan untuk lebih konsisten dan berani berinisiatif akan membantu pengembangan dimensi profil pelajar yang lebih utuh.`;
+  }
+  if (rataRata !== null) {
+    return `${nama} mulai mengenal dan terlibat dalam kegiatan kokurikuler ${daftar}. Diperlukan pendampingan agar lebih percaya diri, aktif, dan mampu mengaitkan kegiatan dengan nilai-nilai Profil Pelajar Pancasila Rahmatan lil Alamin.`;
+  }
+  // tanpa nilai
+  return `${nama} mengikuti kegiatan kokurikuler ${daftar} sesuai jadwal madrasah. Partisipasi yang konsisten diharapkan dapat terus dipertahankan.`;
+}
+
+export function generateDeskripsiEkstrakurikuler(params: {
+  namaSiswa: string;
+  kegiatan: KegiatanItem[];
+}): string {
+  const { namaSiswa, kegiatan } = params;
+  const nama = `Ananda ${namaSiswa}`;
+  if (!kegiatan || kegiatan.length === 0) {
+    return `${nama} belum tercatat mengikuti kegiatan ekstrakurikuler pada semester ini.`;
+  }
+
+  const withNilai = kegiatan.filter(k => k.nilai !== null && k.nilai !== undefined);
+  const tertinggi = withNilai.length > 0
+    ? withNilai.reduce((acc, cur) => (cur.nilai! > (acc.nilai ?? 0) ? cur : acc))
+    : null;
+  const rataRata = withNilai.length > 0
+    ? Math.round(withNilai.reduce((s, k) => s + (k.nilai || 0), 0) / withNilai.length)
+    : null;
+
+  const daftar = kegiatan.map(k => k.nama_kegiatan).join(", ");
+  const labelTertinggi = tertinggi ? nilaiToPredikat(tertinggi.nilai).label : null;
+
+  if (rataRata !== null && rataRata >= 85) {
+    return `${nama} aktif mengikuti kegiatan ekstrakurikuler ${daftar} dengan capaian yang sangat baik. Pada ${tertinggi?.nama_kegiatan}, ${nama} menunjukkan keterampilan dan disiplin yang ${labelTertinggi?.toLowerCase()}. Bakat, minat, serta kemampuan kerja sama yang ditampilkan patut diapresiasi dan terus dikembangkan.`;
+  }
+  if (rataRata !== null && rataRata >= 70) {
+    return `${nama} mengikuti kegiatan ekstrakurikuler ${daftar} dengan baik. Pada ${tertinggi?.nama_kegiatan}, capaian ${nama} tergolong ${labelTertinggi?.toLowerCase()}. Latihan dan kehadiran yang konsisten akan semakin mengasah keterampilan yang dimiliki.`;
+  }
+  if (rataRata !== null) {
+    return `${nama} mulai mengikuti kegiatan ekstrakurikuler ${daftar}. Diperlukan motivasi dan pendampingan agar ${nama} lebih disiplin, aktif berlatih, dan mampu menampilkan keterampilan secara lebih optimal.`;
+  }
+  return `${nama} terdaftar pada kegiatan ekstrakurikuler ${daftar}. Diharapkan kehadiran dan partisipasi tetap dijaga.`;
 }
 
 export function generateCatatanWaliKelas(params: {

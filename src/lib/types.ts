@@ -200,6 +200,24 @@ export interface Presensi {
   updated_at: string;
 }
 
+export type PredikatLabel = "Sangat Baik" | "Baik" | "Cukup" | "Kurang";
+
+export interface Kokurikuler {
+  id: string;
+  siswa_id: string;
+  kelas_id: string;
+  semester: number;
+  tahun_pelajaran: string;
+  nama_kegiatan: string;
+  // 0-100; predikat dihitung otomatis dari nilai
+  nilai: number | null;
+  predikat: PredikatLabel | null;
+  keterangan: string | null;
+  madrasah_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Ekstrakurikuler {
   id: string;
   siswa_id: string;
@@ -207,7 +225,9 @@ export interface Ekstrakurikuler {
   semester: number;
   tahun_pelajaran: string;
   nama_kegiatan: string;
-  predikat: "Sangat Baik" | "Baik" | "Cukup" | "Kurang";
+  // 0-100; predikat dihitung otomatis dari nilai (legacy: predikat tetap disimpan untuk backward compat)
+  nilai: number | null;
+  predikat: PredikatLabel | null;
   keterangan: string | null;
   madrasah_id: string;
   created_at: string;

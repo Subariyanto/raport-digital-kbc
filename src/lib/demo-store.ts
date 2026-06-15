@@ -1,5 +1,5 @@
 // Demo data store - uses localStorage for persistence without Supabase
-import { Guru, Siswa, Kelas, MataPelajaran, CapaianPembelajaran, TujuanPembelajaran, Nilai, DeskripsiRapor, Presensi, Ekstrakurikuler, CatatanWaliKelas, Madrasah } from "./types";
+import { Guru, Siswa, Kelas, MataPelajaran, CapaianPembelajaran, TujuanPembelajaran, Nilai, DeskripsiRapor, Presensi, Ekstrakurikuler, Kokurikuler, CatatanWaliKelas, Madrasah } from "./types";
 
 const MADRASAH_ID = "11111111-1111-1111-1111-111111111111";
 
@@ -150,6 +150,9 @@ export const demoStore = {
 
   getEkskul: () => getStore<Ekstrakurikuler>("ekskul", []),
   setEkskul: (data: Ekstrakurikuler[] | any[]) => setStore("ekskul", data),
+
+  getKokurikuler: () => getStore<Kokurikuler>("kokurikuler", []),
+  setKokurikuler: (data: Kokurikuler[] | any[]) => setStore("kokurikuler", data),
 
   getCatatan: () => getStore<CatatanWaliKelas>("catatan", []),
   setCatatan: (data: CatatanWaliKelas[] | any[]) => setStore("catatan", data),
