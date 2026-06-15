@@ -18,3 +18,48 @@ body {
     text-wrap: balance;
   }
 }
+
+/* ============================================================
+   PRINT STYLES — cetak hanya area .raport-print-area
+   ============================================================ */
+@media print {
+  /* Reset margin & background */
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Sembunyikan semua elemen di luar area cetak */
+  body * {
+    visibility: hidden;
+  }
+  /* Tampilkan area cetak + descendantsnya */
+  .raport-print-area, .raport-print-area * {
+    visibility: visible;
+  }
+  /* Pin area cetak ke kiri-atas halaman */
+  .raport-print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  /* Hide elemen yang ditandai .print:hidden / .no-print */
+  .print\:hidden, .no-print {
+    display: none !important;
+  }
+  /* Toast / notifikasi react-hot-toast */
+  [role="status"], [data-rht-toaster], .react-hot-toast {
+    display: none !important;
+  }
+}

@@ -160,7 +160,7 @@ export default function CetakRaportPage() {
       {!raportData ? (
         <div className="text-center py-12 text-gray-400 print:hidden">Pilih kelas dan siswa untuk preview raport</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border p-6 print:shadow-none print:border-0 print:p-0">
+        <div className="bg-white rounded-xl shadow-sm border p-6 print:shadow-none print:border-0 print:p-0 raport-print-area">
           {/* Header */}
           <div className="text-center border-b-2 border-gray-800 pb-4 mb-4">
             <h2 className="text-lg font-bold uppercase">LAPORAN HASIL BELAJAR</h2>
