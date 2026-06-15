@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { demoStore } from "@/lib/demo-store";
-import { Siswa } from "@/lib/types";
+import { Siswa, Kelas } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
@@ -18,11 +18,12 @@ const EMPTY_FORM = {
   // Wali
   nama_wali: "", ttl_wali: "", agama_wali: "", kewarganegaraan_wali: "",
   pendidikan_wali: "", pekerjaan_wali: "", alamat_wali: "", hubungan_wali: "",
-  hp_ortu: "", jenjang: "MI", fase: "B",
+  hp_ortu: "", jenjang: "MI", fase: "B", kelas_id: "",
 };
 
 export default function SiswaPage() {
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -33,6 +34,7 @@ export default function SiswaPage() {
   const fetchSiswa = useCallback(() => {
     setLoading(true);
     setSiswaList(demoStore.getSiswa());
+    setKelasList(demoStore.getKelas());
     setLoading(false);
   }, []);
 
@@ -46,12 +48,13 @@ export default function SiswaPage() {
     }
 
     const list = demoStore.getSiswa();
+    const formForSave = { ...form, kelas_id: form.kelas_id || null };
     if (editingSiswa) {
-      const updated = list.map(s => s.id === editingSiswa.id ? { ...s, ...form, jenis_kelamin: form.jenis_kelamin as "L" | "P" } : s);
+      const updated = list.map(s => s.id === editingSiswa.id ? { ...s, ...formForSave, jenis_kelamin: form.jenis_kelamin as "L" | "P" } : s);
       demoStore.setSiswa(updated as Siswa[]);
       toast.success("Siswa berhasil diupdate");
     } else {
-      list.push({ ...form, id: demoStore.generateId(), kelas_id: null, status: "aktif" as const, foto_url: null, nama_wali: form.nama_wali || null, madrasah_id: "11111111-1111-1111-1111-111111111111", created_at: "", updated_at: "" } as Siswa);
+      list.push({ ...formForSave, id: demoStore.generateId(), status: "aktif" as const, foto_url: null, nama_wali: form.nama_wali || null, madrasah_id: "11111111-1111-1111-1111-111111111111", created_at: "", updated_at: "" } as Siswa);
       demoStore.setSiswa(list);
       toast.success("Siswa berhasil ditambahkan");
     }
@@ -92,6 +95,7 @@ export default function SiswaPage() {
       alamat_wali: (siswa as any).alamat_wali || "",
       hubungan_wali: (siswa as any).hubungan_wali || "",
       hp_ortu: siswa.hp_ortu || "", jenjang: siswa.jenjang || "MI", fase: siswa.fase || "B",
+      kelas_id: siswa.kelas_id || "",
     });
     setShowForm(true);
   };
@@ -268,9 +272,29 @@ export default function SiswaPage() {
 
                 {/* TAB AKADEMIK */}
                 {activeTab === "akademik" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Jenjang</label><select value={form.jenjang} onChange={(e) => setForm({ ...form, jenjang: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"><option value="RA">RA</option><option value="MI">MI</option><option value="MTs">MTs</option><option value="MA">MA</option><option value="MAK">MAK</option></select></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Fase</label><select value={form.fase} onChange={(e) => setForm({ ...form, fase: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"><option value="Fondasi">Fondasi (RA)</option><option value="A">Fase A (MI 1-2)</option><option value="B">Fase B (MI 3-4)</option><option value="C">Fase C (MI 5-6)</option><option value="D">Fase D (MTs 7-9)</option><option value="E">Fase E (MA/MAK 10)</option><option value="F">Fase F (MA/MAK 11-12)</option></select></div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div><label className="block text-sm font-medium text-gray-700 mb-1">Jenjang</label><select value={form.jenjang} onChange={(e) => setForm({ ...form, jenjang: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"><option value="RA">RA</option><option value="MI">MI</option><option value="MTs">MTs</option><option value="MA">MA</option><option value="MAK">MAK</option></select></div>
+                      <div><label className="block text-sm font-medium text-gray-700 mb-1">Fase</label><select value={form.fase} onChange={(e) => setForm({ ...form, fase: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"><option value="Fondasi">Fondasi (RA)</option><option value="A">Fase A (MI 1-2)</option><option value="B">Fase B (MI 3-4)</option><option value="C">Fase C (MI 5-6)</option><option value="D">Fase D (MTs 7-9)</option><option value="E">Fase E (MA/MAK 10)</option><option value="F">Fase F (MA/MAK 11-12)</option></select></div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Kelas / Rombel</label>
+                      <select
+                        value={form.kelas_id}
+                        onChange={(e) => setForm({ ...form, kelas_id: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                      >
+                        <option value="">-- Pilih Kelas --</option>
+                        {kelasList.map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {k.nama_rombel || "-"}{k.jenjang ? ` (${k.jenjang})` : ""}{k.tahun_pelajaran ? ` - ${k.tahun_pelajaran}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {kelasList.length === 0 && (
+                        <p className="text-xs text-amber-700 mt-1">Belum ada data kelas. Tambah dulu di menu Kelas / Rombel.</p>
+                      )}
+                    </div>
                   </div>
                 )}
 
