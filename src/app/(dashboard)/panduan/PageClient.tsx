@@ -391,27 +391,6 @@ export default function PanduanClient() {
       ),
     },
     {
-      id: "admin-pembelian",
-      icon: <ShoppingCart size={16} />,
-      title: "Admin: Pengaturan Pembelian",
-      body: (
-        <>
-          <p className="mb-3 italic text-sm text-gray-600">Khusus role Admin.</p>
-          <p className="mb-3">
-            Tab <strong>Admin → Pengaturan Pembelian</strong> untuk konfigurasi info yang muncul di halaman /beli-lisensi.
-          </p>
-          <ul className="list-disc pl-5 space-y-1 text-sm">
-            <li>Nama Aplikasi & URL</li>
-            <li>Nomor WhatsApp customer service</li>
-            <li>Harga TRIAL & FULL</li>
-            <li>Info Pembayaran (rekening bank)</li>
-            <li>Template pesan order WhatsApp (placeholder: APP, URL, NAMA, NIP)</li>
-            <li>Template distribusi kode (placeholder: KODE, APP, URL, NAMA, NIP)</li>
-          </ul>
-        </>
-      ),
-    },
-    {
       id: "admin-sync",
       icon: <RefreshCw size={16} />,
       title: "Admin: Sinkronisasi",
