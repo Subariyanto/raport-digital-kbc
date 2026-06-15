@@ -1,0 +1,29 @@
+{
+  "codes": [
+    {
+      "code": "FULL-KGJS-T7QN-9Z2Y",
+      "prefix": "FULL",
+      "status": "active",
+      "createdAt": "2026-06-15T02:27:20.423Z",
+      "note": null
+    },
+    {
+      "code": "FULL-4T8B-NFL2-3F78",
+      "prefix": "FULL",
+      "status": "active",
+      "createdAt": "2026-06-15T02:28:51.884Z",
+      "note": null
+    }
+  ],
+  "purchase": {
+    "appName": "Raport Digital Madrasah KBC",
+    "appUrl": "https://subariyanto.github.io/raport-digital-kbc/",
+    "waNumber": "082330647698",
+    "hargaFull": "Rp 150.000 (lifetime)",
+    "hargaTrial": "Gratis trial 5 hari",
+    "bankInfo": "BSI 7143867462 a.n. Subariyanto",
+    "orderTemplate": "Halo, saya ingin pesan lisensi {APP}.\nNama: \nNIP: \nMadrasah: \n\nSilakan kirim kode aktivasi ke nomor ini, terima kasih 🙏",
+    "sendTemplate": "Halo {NAMA},\n\nBerikut kode aktivasi {APP}:\n\nKode: {KODE}\n\nLangkah:\n1. Buka {URL}\n2. Klik Daftar\n3. Isi NIP {NIP}, kode aktivasi, dan password\n\nTerima kasih 🙏"
+  },
+  "updatedAt": "2026-06-15T05:20:24.956Z"
+}
