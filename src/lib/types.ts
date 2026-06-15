@@ -46,9 +46,32 @@ export interface Siswa {
   jenis_kelamin: "L" | "P";
   agama: string | null;
   alamat: string | null;
+  // Field standar form NISN (Section E/F/G)
+  // Ayah Kandung
   nama_ayah: string | null;
+  ttl_ayah: string | null;            // tempat, tgl lahir ayah
+  agama_ayah: string | null;
+  kewarganegaraan_ayah: string | null;
+  pendidikan_ayah: string | null;
+  pekerjaan_ayah: string | null;
+  alamat_ayah: string | null;
+  // Ibu Kandung
   nama_ibu: string | null;
+  ttl_ibu: string | null;
+  agama_ibu: string | null;
+  kewarganegaraan_ibu: string | null;
+  pendidikan_ibu: string | null;
+  pekerjaan_ibu: string | null;
+  alamat_ibu: string | null;
+  // Wali (opsional)
   nama_wali: string | null;
+  ttl_wali: string | null;
+  agama_wali: string | null;
+  kewarganegaraan_wali: string | null;
+  pendidikan_wali: string | null;
+  pekerjaan_wali: string | null;
+  alamat_wali: string | null;
+  hubungan_wali: string | null;       // contoh: paman, kakak, kakek
   hp_ortu: string | null;
   kelas_id: string | null;
   jenjang: string | null;
