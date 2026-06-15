@@ -91,12 +91,6 @@ export default function LoginClient() {
             </Link>
           </div>
 
-          <div className="mt-5 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
-            <strong>Akun admin default:</strong> <code>admin@local</code> / <code>@riyant1970</code>
-            <br />
-            Ganti password segera setelah login.
-          </div>
-
           <p className="text-center text-xs text-gray-400 mt-6">
             Kurikulum Berbasis Cinta &bull; Kemenag 2026
           </p>
