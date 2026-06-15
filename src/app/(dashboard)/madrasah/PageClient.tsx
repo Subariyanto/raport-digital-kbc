@@ -4,21 +4,33 @@ import { useState, useEffect } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Madrasah } from "@/lib/types";
 import toast from "react-hot-toast";
-import { Save, BookmarkPlus, Trash2 } from "lucide-react";
+import { Save, Sparkles, Trash2 } from "lucide-react";
+
+const CONTOH_FORM = {
+  nama: "MI Contoh Madrasah Jember",
+  nsm: "111235090001",
+  npsn: "60714201",
+  alamat: "Jl. Pendidikan No. 1",
+  desa: "Sukowono",
+  kecamatan: "Sukowono",
+  kabupaten: "Jember",
+  provinsi: "Jawa Timur",
+  kepala_madrasah: "Drs. H. Ahmad, M.Pd.",
+  nip_kepala: "196512311990031001",
+  tahun_pelajaran: "2024/2025",
+  semester: 1,
+};
+
+const EMPTY_FORM = {
+  nama: "", nsm: "", npsn: "", alamat: "", desa: "", kecamatan: "",
+  kabupaten: "", provinsi: "", kepala_madrasah: "", nip_kepala: "",
+  tahun_pelajaran: "2024/2025", semester: 1,
+};
 
 export default function MadrasahPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [hasSample, setHasSample] = useState(false);
-  const [form, setForm] = useState({
-    nama: "", nsm: "", npsn: "", alamat: "", desa: "", kecamatan: "",
-    kabupaten: "", provinsi: "", kepala_madrasah: "", nip_kepala: "",
-    tahun_pelajaran: "2024/2025", semester: 1,
-  });
-
-  const refreshHasSample = () => {
-    setHasSample(!!demoStore.getMadrasahDefaultSample());
-  };
+  const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
     const m = demoStore.getMadrasah();
@@ -29,7 +41,6 @@ export default function MadrasahPage() {
       kepala_madrasah: m.kepala_madrasah || "", nip_kepala: m.nip_kepala || "",
       tahun_pelajaran: m.tahun_pelajaran || "2024/2025", semester: m.semester || 1,
     });
-    refreshHasSample();
     setLoading(false);
   }, []);
 
@@ -42,42 +53,24 @@ export default function MadrasahPage() {
     setSaving(false);
   };
 
-  const handleSetAsSample = () => {
-    if (!form.nama.trim()) {
-      toast.error("Isi minimal Nama Madrasah dulu sebelum dijadikan sampel default");
-      return;
+  const handleUseExample = () => {
+    const adaIsi = !!(form.nama || form.nsm || form.npsn || form.alamat || form.kepala_madrasah);
+    if (adaIsi) {
+      const ok = confirm(
+        "Form sudah ada isinya. Timpa dengan DATA CONTOH?\n\n" +
+        "Data contoh hanya muncul di form. Belum disimpan sampai Pak Yanto klik Simpan."
+      );
+      if (!ok) return;
     }
-    const ok = confirm(
-      "Jadikan data madrasah saat ini sebagai SAMPEL DEFAULT?\n\n" +
-      "Sampel default akan dipakai otomatis ketika data madrasah dikosongkan, " +
-      "atau saat user lain login pertama kali tanpa data."
-    );
-    if (!ok) return;
-    const m = demoStore.getMadrasah();
-    const ok2 = demoStore.setMadrasahDefaultSample({ ...m, ...form, semester: Number(form.semester) } as Madrasah);
-    if (ok2) {
-      toast.success("Data ini disimpan sebagai sampel default");
-      refreshHasSample();
-    }
+    setForm(CONTOH_FORM);
+    toast.success("Data contoh dimuat. Edit seperlunya, lalu klik Simpan.");
   };
 
   const handleClear = () => {
-    const willRestoreSample = !!demoStore.getMadrasahDefaultSample();
-    const msg = willRestoreSample
-      ? "Kosongkan data madrasah?\n\nData akan dikembalikan ke SAMPEL DEFAULT yang sudah disimpan."
-      : "Kosongkan SEMUA isian data madrasah?\n\nTidak ada sampel default tersimpan, jadi form akan benar-benar kosong.";
-    const ok = confirm(msg);
+    const ok = confirm("Kosongkan SEMUA isian data madrasah?\n\nForm akan benar-benar kosong (data tersimpan baru hilang setelah Pak Yanto klik Simpan).");
     if (!ok) return;
-    const restored = demoStore.resetMadrasah();
-    if (!restored) return;
-    setForm({
-      nama: restored.nama || "", nsm: restored.nsm || "", npsn: restored.npsn || "",
-      alamat: restored.alamat || "", desa: restored.desa || "", kecamatan: restored.kecamatan || "",
-      kabupaten: restored.kabupaten || "", provinsi: restored.provinsi || "",
-      kepala_madrasah: restored.kepala_madrasah || "", nip_kepala: restored.nip_kepala || "",
-      tahun_pelajaran: restored.tahun_pelajaran || "2024/2025", semester: restored.semester || 1,
-    });
-    toast.success(willRestoreSample ? "Data dikembalikan ke sampel default" : "Data madrasah dikosongkan");
+    setForm(EMPTY_FORM);
+    toast.success("Form dikosongkan. Klik Simpan untuk menyimpan kondisi kosong.");
   };
 
   if (loading) return <div className="text-center py-12 text-gray-400">Memuat...</div>;
@@ -89,28 +82,22 @@ export default function MadrasahPage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={handleSetAsSample}
+            onClick={handleUseExample}
             className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            title="Simpan data sekarang sebagai sampel default (dipakai saat data dikosongkan / user baru)"
+            title="Isi form dengan data contoh (belum disimpan, bisa diedit dulu)"
           >
-            <BookmarkPlus size={16} /> Jadikan Sampel Default
+            <Sparkles size={16} /> Gunakan Data Contoh
           </button>
           <button
             type="button"
             onClick={handleClear}
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            title="Kosongkan data madrasah (atau kembalikan ke sampel default kalau ada)"
+            title="Kosongkan semua isian form"
           >
             <Trash2 size={16} /> Kosongkan Data
           </button>
         </div>
       </div>
-
-      {hasSample && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 mb-4">
-          ✓ Sampel default tersimpan. Saat data madrasah dikosongkan atau user baru login, form otomatis ter-isi dari sampel ini.
-        </div>
-      )}
 
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <form onSubmit={handleSave} className="space-y-5">

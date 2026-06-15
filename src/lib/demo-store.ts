@@ -140,63 +140,20 @@ function setStoreObj<T>(key: string, data: T): boolean {
 // Public API
 export const demoStore = {
   getMadrasah: () => {
-    const m = getStoreObj<Madrasah>("madrasah", defaultMadrasah);
-    // Auto-seed dari default sample kalau data madrasah masih kosong
+    // Cleanup migration: hapus key sampel default lama (eksperimen sebelumnya)
     if (typeof window !== "undefined") {
-      try {
-        const isEmpty = !m.nama && !m.nsm && !m.npsn;
-        if (isEmpty) {
-          const sampleRaw = window.localStorage.getItem("rdm_madrasah_default");
-          if (sampleRaw) {
-            const sample = JSON.parse(sampleRaw) as Madrasah;
-            window.localStorage.setItem("rdm_madrasah", JSON.stringify(sample));
-            return sample;
-          }
-        }
-      } catch {}
+      try { window.localStorage.removeItem("rdm_madrasah_default"); } catch {}
     }
-    return m;
+    return getStoreObj<Madrasah>("madrasah", defaultMadrasah);
   },
   setMadrasah: (m: Madrasah) => setStoreObj("madrasah", m),
 
-  // Default sample madrasah (admin-defined snapshot, dipakai sebagai seed untuk user baru / saat kosongkan data)
-  getMadrasahDefaultSample: (): Madrasah | null => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = window.localStorage.getItem("rdm_madrasah_default");
-      if (!raw) return null;
-      return JSON.parse(raw) as Madrasah;
-    } catch {
-      return null;
-    }
-  },
-  setMadrasahDefaultSample: (m: Madrasah): boolean => {
-    if (typeof window === "undefined") return false;
-    if (isTrialLocked()) { notifyLocked(); return false; }
-    window.localStorage.setItem("rdm_madrasah_default", JSON.stringify(m));
-    return true;
-  },
-  clearMadrasahDefaultSample: (): boolean => {
-    if (typeof window === "undefined") return false;
-    if (isTrialLocked()) { notifyLocked(); return false; }
-    window.localStorage.removeItem("rdm_madrasah_default");
-    return true;
-  },
   /**
-   * Kosongkan data madrasah. Kalau ada default sample, dikembalikan ke sample tsb.
-   * Kalau tidak, benar-benar kosong (defaultMadrasah).
+   * Kosongkan data madrasah ke kondisi benar-benar kosong (defaultMadrasah).
    */
   resetMadrasah: (): Madrasah | null => {
     if (typeof window === "undefined") return null;
     if (isTrialLocked()) { notifyLocked(); return null; }
-    try {
-      const sampleRaw = window.localStorage.getItem("rdm_madrasah_default");
-      if (sampleRaw) {
-        const sample = JSON.parse(sampleRaw) as Madrasah;
-        window.localStorage.setItem("rdm_madrasah", JSON.stringify(sample));
-        return sample;
-      }
-    } catch {}
     const empty = { ...defaultMadrasah, updated_at: new Date().toISOString() };
     window.localStorage.setItem("rdm_madrasah", JSON.stringify(empty));
     return empty;
