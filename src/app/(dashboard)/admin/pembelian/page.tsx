@@ -70,7 +70,7 @@ function PurchaseClient() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Harga FULL (lifetime)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Harga FULL (1 Tahun)</label>
           <input value={form.hargaFull} onChange={(e) => update("hargaFull", e.target.value)} className={inputClass} />
         </div>
 

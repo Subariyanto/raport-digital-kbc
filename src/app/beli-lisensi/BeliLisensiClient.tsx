@@ -103,7 +103,7 @@ export default function BeliLisensiClient() {
             <h2 className="text-2xl font-bold mt-3">{purchase.hargaFull}</h2>
             <ul className="mt-4 space-y-2 text-sm text-gray-700">
               <li className="flex items-start gap-2"><CheckCircle2 size={16} className="text-emerald-600 mt-0.5" /> Semua fitur tanpa batas</li>
-              <li className="flex items-start gap-2"><CheckCircle2 size={16} className="text-emerald-600 mt-0.5" /> Aktif lifetime</li>
+              <li className="flex items-start gap-2"><CheckCircle2 size={16} className="text-emerald-600 mt-0.5" /> Aktif 1 tahun</li>
               <li className="flex items-start gap-2"><CheckCircle2 size={16} className="text-emerald-600 mt-0.5" /> Update versi gratis</li>
               <li className="flex items-start gap-2"><CheckCircle2 size={16} className="text-emerald-600 mt-0.5" /> Support via WhatsApp</li>
             </ul>
