@@ -63,6 +63,13 @@ export const Tier = {
     return Tier.status(user).active;
   },
 
+  isLocked(user: TierUserShape | null): boolean {
+    // Trial yang sudah expired = locked (read-only mode)
+    if (!user) return false;
+    if (user.tier === "admin" || user.tier === "full") return false;
+    return Tier.status(user).expired;
+  },
+
   badgeHtml(user: TierUserShape | null): { label: string; className: string } {
     if (!user) return { label: "—", className: "bg-gray-100 text-gray-700" };
     if (user.tier === "admin") return { label: "ADMIN", className: "bg-red-100 text-red-700 border border-red-300" };

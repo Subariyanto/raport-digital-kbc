@@ -28,7 +28,7 @@ export default function TrialBanner() {
         <div className="flex-1">
           <p className="font-bold text-rose-800">Trial Anda telah habis</p>
           <p className="text-sm text-rose-700 mt-0.5">
-            Upgrade ke FULL untuk membuka kembali semua fitur tanpa batas waktu.
+            Akun masuk mode <strong>read-only</strong>. Anda masih bisa melihat data lama, namun fitur Tambah / Ubah / Hapus / Cetak / Export dinonaktifkan. Aktivasi kode FULL untuk membuka kembali semua fitur.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link

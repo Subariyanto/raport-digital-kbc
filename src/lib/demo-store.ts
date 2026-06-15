@@ -1,5 +1,50 @@
 // Demo data store - uses localStorage for persistence without Supabase
 import { Guru, Siswa, Kelas, MataPelajaran, CapaianPembelajaran, TujuanPembelajaran, Nilai, DeskripsiRapor, Presensi, Ekstrakurikuler, Kokurikuler, CatatanWaliKelas, Madrasah } from "./types";
+import toast from "react-hot-toast";
+
+// ============================================================
+// Trial lock guard — blocks all write ops when trial expired
+// ============================================================
+function isTrialLocked(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.localStorage.getItem("rdmkbc_v1_users");
+    const session = window.localStorage.getItem("rdmkbc_v1_session");
+    if (!raw || !session) return false;
+    const users = JSON.parse(raw);
+    const me = users.find((u: any) => u.id === session);
+    if (!me || me.role === "admin") return false;
+    if (me.tier !== "trial" || !me.trialExpiresAt) return false;
+    return new Date(me.trialExpiresAt).getTime() <= Date.now();
+  } catch {
+    return false;
+  }
+}
+
+let _lastLockToast = 0;
+function notifyLocked(): void {
+  if (typeof window === "undefined") return;
+  const now = Date.now();
+  if (now - _lastLockToast < 1500) return; // throttle
+  _lastLockToast = now;
+  try {
+    toast.error("Trial sudah habis. Aktivasi kode FULL untuk menyimpan / mengubah data.", {
+      duration: 4000,
+    });
+  } catch {
+    // toast might not be mounted yet — fall back to alert
+    if (typeof window !== "undefined") {
+      window.alert("Trial sudah habis. Aktivasi kode FULL untuk menyimpan / mengubah data.");
+    }
+  }
+}
+
+export function isTrialLockedExternal(): boolean {
+  return isTrialLocked();
+}
+export function notifyTrialLocked(): void {
+  notifyLocked();
+}
 
 const MADRASAH_ID = "11111111-1111-1111-1111-111111111111";
 
@@ -92,13 +137,16 @@ function getStore<T>(key: string, defaults: T[]): T[] {
     const stored = localStorage.getItem(`rdm_${key}`);
     if (stored) return JSON.parse(stored);
   } catch {}
+  // Seed defaults — tetap dilakukan walau locked supaya read tidak gagal
   localStorage.setItem(`rdm_${key}`, JSON.stringify(defaults));
   return defaults;
 }
 
-function setStore<T>(key: string, data: T[]) {
-  if (typeof window === "undefined") return;
+function setStore<T>(key: string, data: T[]): boolean {
+  if (typeof window === "undefined") return false;
+  if (isTrialLocked()) { notifyLocked(); return false; }
   localStorage.setItem(`rdm_${key}`, JSON.stringify(data));
+  return true;
 }
 
 function getStoreObj<T>(key: string, defaultVal: T): T {
@@ -111,9 +159,11 @@ function getStoreObj<T>(key: string, defaultVal: T): T {
   return defaultVal;
 }
 
-function setStoreObj<T>(key: string, data: T) {
-  if (typeof window === "undefined") return;
+function setStoreObj<T>(key: string, data: T): boolean {
+  if (typeof window === "undefined") return false;
+  if (isTrialLocked()) { notifyLocked(); return false; }
   localStorage.setItem(`rdm_${key}`, JSON.stringify(data));
+  return true;
 }
 
 // Public API

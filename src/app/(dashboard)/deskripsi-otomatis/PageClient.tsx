@@ -44,6 +44,25 @@ function readAux(key: string): DeskAux[] {
 
 function writeAux(key: string, data: DeskAux[]) {
   if (typeof window === "undefined") return;
+  // Trial lock: block writes saat trial expired
+  try {
+    const usersRaw = localStorage.getItem("rdmkbc_v1_users");
+    const session = localStorage.getItem("rdmkbc_v1_session");
+    if (usersRaw && session) {
+      const users = JSON.parse(usersRaw);
+      const me = users.find((u: any) => u.id === session);
+      if (
+        me &&
+        me.role !== "admin" &&
+        me.tier === "trial" &&
+        me.trialExpiresAt &&
+        new Date(me.trialExpiresAt).getTime() <= Date.now()
+      ) {
+        toast.error("Trial sudah habis. Aktivasi kode FULL untuk menyimpan deskripsi.");
+        return;
+      }
+    }
+  } catch {}
   localStorage.setItem(`rdm_${key}`, JSON.stringify(data));
 }
 

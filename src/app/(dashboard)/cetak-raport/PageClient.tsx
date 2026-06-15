@@ -8,7 +8,10 @@ import {
   generateDeskripsiKokurikuler,
   generateDeskripsiEkstrakurikuler,
 } from "@/lib/deskripsi-generator";
+import { Auth } from "@/lib/auth";
+import { Tier } from "@/lib/tier";
 import { Printer } from "lucide-react";
+import toast from "react-hot-toast";
 
 // Helper: baca deskripsi aux (kokurikuler / ekstrakurikuler) dari localStorage
 function readAux(key: string): Array<{
@@ -113,7 +116,14 @@ export default function CetakRaportPage() {
     setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks });
   }, [selectedSiswa, selectedKelas]);
 
-  const handlePrint = () => { window.print(); };
+  const handlePrint = () => {
+    const me = Auth.current();
+    if (Tier.isLocked(me)) {
+      toast.error("Trial sudah habis. Aktivasi kode FULL untuk mencetak raport.");
+      return;
+    }
+    window.print();
+  };
 
   return (
     <div>
