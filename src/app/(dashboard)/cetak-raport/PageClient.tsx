@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Siswa, Kelas } from "@/lib/types";
-import { nilaiToPredikat } from "@/lib/deskripsi-generator";
+import {
+  nilaiToPredikat,
+  generateDeskripsiKokurikuler,
+  generateDeskripsiEkstrakurikuler,
+} from "@/lib/deskripsi-generator";
 import { Printer } from "lucide-react";
 
 // Helper: baca deskripsi aux (kokurikuler / ekstrakurikuler) dari localStorage
@@ -71,13 +75,40 @@ export default function CetakRaportPage() {
     const koko = allKoko.filter(k => k.siswa_id === selectedSiswa && k.kelas_id === selectedKelas);
     const catatan = allCatatan.find(c => c.siswa_id === selectedSiswa && c.kelas_id === selectedKelas);
 
-    // Deskripsi naratif kokurikuler & ekstrakurikuler (dari menu Deskripsi Otomatis, kalau sudah disimpan)
-    const deskKoko = readAux("deskripsi_kokurikuler").find(
+    // Deskripsi naratif kokurikuler & ekstrakurikuler.
+    // Prioritas: yang sudah disimpan via menu Deskripsi Otomatis;
+    // kalau belum ada, auto-generate dari data kegiatan supaya raport tidak kosong.
+    const savedKoko = readAux("deskripsi_kokurikuler").find(
       d => d.siswa_id === selectedSiswa && d.kelas_id === selectedKelas
     )?.deskripsi_text || "";
-    const deskEks = readAux("deskripsi_ekstrakurikuler").find(
+    const savedEks = readAux("deskripsi_ekstrakurikuler").find(
       d => d.siswa_id === selectedSiswa && d.kelas_id === selectedKelas
     )?.deskripsi_text || "";
+
+    const deskKoko = savedKoko
+      ? savedKoko
+      : (siswa && koko.length > 0
+          ? generateDeskripsiKokurikuler({
+              namaSiswa: siswa.nama,
+              kegiatan: koko.map(k => ({
+                nama_kegiatan: k.nama_kegiatan,
+                nilai: k.nilai,
+                keterangan: k.keterangan,
+              })),
+            })
+          : "");
+    const deskEks = savedEks
+      ? savedEks
+      : (siswa && ekskul.length > 0
+          ? generateDeskripsiEkstrakurikuler({
+              namaSiswa: siswa.nama,
+              kegiatan: ekskul.map((e: any) => ({
+                nama_kegiatan: e.nama_kegiatan,
+                nilai: e.nilai ?? null,
+                keterangan: e.keterangan,
+              })),
+            })
+          : "");
 
     setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks });
   }, [selectedSiswa, selectedKelas]);
@@ -194,10 +225,14 @@ export default function CetakRaportPage() {
               )}
             </tbody>
           </table>
-          {raportData.deskKoko && (
-            <div className="text-xs text-gray-700 italic mb-6 px-1">{raportData.deskKoko}</div>
+          {raportData.deskKoko ? (
+            <div className="border border-gray-300 border-t-0 px-3 py-2 text-xs text-gray-700 italic mb-6">
+              <span className="font-semibold not-italic text-gray-800">Deskripsi: </span>
+              {raportData.deskKoko}
+            </div>
+          ) : (
+            <div className="mb-6"></div>
           )}
-          {!raportData.deskKoko && <div className="mb-6"></div>}
 
           {/* Ekskul */}
           <h4 className="font-bold text-sm mb-2">C. EKSTRAKURIKULER</h4>
@@ -232,10 +267,14 @@ export default function CetakRaportPage() {
               )}
             </tbody>
           </table>
-          {raportData.deskEks && (
-            <div className="text-xs text-gray-700 italic mb-6 px-1">{raportData.deskEks}</div>
+          {raportData.deskEks ? (
+            <div className="border border-gray-300 border-t-0 px-3 py-2 text-xs text-gray-700 italic mb-6">
+              <span className="font-semibold not-italic text-gray-800">Deskripsi: </span>
+              {raportData.deskEks}
+            </div>
+          ) : (
+            <div className="mb-6"></div>
           )}
-          {!raportData.deskEks && <div className="mb-6"></div>}
 
           {/* Presensi */}
           <h4 className="font-bold text-sm mb-2">D. KETIDAKHADIRAN</h4>
