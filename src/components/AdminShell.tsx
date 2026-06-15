@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Auth, type AppUser } from "@/lib/auth";
-import { Users as UsersIcon, KeyRound, ShoppingCart, ArrowLeft } from "lucide-react";
+import { Users as UsersIcon, KeyRound, ShoppingCart, ArrowLeft, RefreshCw } from "lucide-react";
 
 export function AdminGuard({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -45,11 +45,12 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export function AdminTabs({ active }: { active: "users" | "codes" | "purchase" }) {
+export function AdminTabs({ active }: { active: "users" | "codes" | "purchase" | "sync" }) {
   const tabs = [
     { id: "users", label: "Kelola User", href: "/admin/users", icon: <UsersIcon size={16} /> },
     { id: "codes", label: "Kode Aktivasi", href: "/admin/codes", icon: <KeyRound size={16} /> },
     { id: "purchase", label: "Pengaturan Pembelian", href: "/admin/pembelian", icon: <ShoppingCart size={16} /> },
+    { id: "sync", label: "Sinkronisasi", href: "/admin/sinkronisasi", icon: <RefreshCw size={16} /> },
   ] as const;
   return (
     <div className="mb-5 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">

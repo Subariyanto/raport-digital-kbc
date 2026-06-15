@@ -2,6 +2,8 @@
 // Pattern adapted from e-RHK (js/lib/codes.js) and supervisi-pm-kbc.
 "use client";
 
+import { GithubSync } from "./github-sync";
+
 const KEY_CODES = "rdmkbc_v1_codes";
 const KEY_PURCHASE = "rdmkbc_v1_purchase";
 
@@ -66,6 +68,18 @@ function writeCodes(list: ActivationCode[]) {
   const w = safeWindow();
   if (!w) return;
   w.localStorage.setItem(KEY_CODES, JSON.stringify(list));
+  // Best-effort sync ke gh-pages (kalau PAT terpasang).
+  // Async, tidak block UI; error di-log saja, local op tetap sukses.
+  if (GithubSync.hasPAT()) {
+    void GithubSync.pushIfConfigured(
+      { codes: list, purchase: CodeStore.getPurchase() },
+      "sync codes " + new Date().toISOString()
+    ).then(res => {
+      if (!res.synced && res.reason === "error") {
+        console.warn("[CodeStore] sync codes failed:", res.error);
+      }
+    });
+  }
 }
 
 function randomChunk(len: number): string {
@@ -133,20 +147,48 @@ export const CodeStore = {
     const upper = (code || "").trim().toUpperCase();
     if (!upper) return null;
     if (upper === MASTER_CODE) return null; // master handled separately
-    return readCodes().find((c) => c.code.toUpperCase() === upper) || null;
+    // 1. Check localStorage first
+    const local = readCodes().find((c) => c.code.toUpperCase() === upper);
+    if (local) return local;
+    // 2. Fallback to remote codes (di-cache di window saat boot)
+    const w = safeWindow();
+    if (w && Array.isArray(w.RDMKBC_REMOTE_CODES)) {
+      const remote = w.RDMKBC_REMOTE_CODES.find((c) => c.code.toUpperCase() === upper);
+      if (remote) return remote;
+    }
+    return null;
   },
 
   markUsed(code: string, by: { userId: string; nama: string; nip: string | null }) {
     const all = readCodes();
     const upper = code.toUpperCase();
     const idx = all.findIndex((c) => c.code.toUpperCase() === upper);
-    if (idx < 0) return;
-    all[idx].status = "used";
-    all[idx].usedAt = new Date().toISOString();
-    all[idx].usedByUserId = by.userId;
-    all[idx].usedByNama = by.nama;
-    all[idx].usedByNip = by.nip;
-    writeCodes(all);
+    if (idx >= 0) {
+      all[idx].status = "used";
+      all[idx].usedAt = new Date().toISOString();
+      all[idx].usedByUserId = by.userId;
+      all[idx].usedByNama = by.nama;
+      all[idx].usedByNip = by.nip;
+      writeCodes(all);
+      return;
+    }
+    // Fallback: kode dari remote (device admin lain). Adopt ke local + mark used + push.
+    const w = safeWindow();
+    if (w && Array.isArray(w.RDMKBC_REMOTE_CODES)) {
+      const remote = w.RDMKBC_REMOTE_CODES.find((c) => c.code.toUpperCase() === upper);
+      if (remote) {
+        const adopted: ActivationCode = {
+          ...remote,
+          status: "used",
+          usedAt: new Date().toISOString(),
+          usedByUserId: by.userId,
+          usedByNama: by.nama,
+          usedByNip: by.nip,
+        };
+        all.push(adopted);
+        writeCodes(all);
+      }
+    }
   },
 
   revoke(code: string) {
@@ -178,9 +220,15 @@ export const CodeStore = {
     if (!w) return DEFAULT_PURCHASE;
     try {
       const raw = w.localStorage.getItem(KEY_PURCHASE);
-      if (!raw) return DEFAULT_PURCHASE;
-      const obj = JSON.parse(raw);
-      return { ...DEFAULT_PURCHASE, ...obj };
+      if (raw) {
+        const obj = JSON.parse(raw);
+        return { ...DEFAULT_PURCHASE, ...obj };
+      }
+      // Fallback ke remote (kalau ada)
+      if (w.RDMKBC_REMOTE_PURCHASE) {
+        return { ...DEFAULT_PURCHASE, ...w.RDMKBC_REMOTE_PURCHASE };
+      }
+      return DEFAULT_PURCHASE;
     } catch {
       return DEFAULT_PURCHASE;
     }
@@ -191,6 +239,17 @@ export const CodeStore = {
     if (!w) return;
     const merged = { ...CodeStore.getPurchase(), ...p };
     w.localStorage.setItem(KEY_PURCHASE, JSON.stringify(merged));
+    // Best-effort push ke gh-pages
+    if (GithubSync.hasPAT()) {
+      void GithubSync.pushIfConfigured(
+        { codes: readCodes(), purchase: merged },
+        "sync purchase " + new Date().toISOString()
+      ).then(res => {
+        if (!res.synced && res.reason === "error") {
+          console.warn("[CodeStore] sync purchase failed:", res.error);
+        }
+      });
+    }
   },
 };
 

@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Auth, type AppUser } from "@/lib/auth";
 import { Tier } from "@/lib/tier";
+import { GithubSync } from "@/lib/github-sync";
 
 interface AuthCtx {
   user: AppUser | null;
@@ -18,6 +19,8 @@ export function useDashboardAuth(): { user: AppUser | null; loading: boolean; re
 
   useEffect(() => {
     (async () => {
+      // Boot: fetch remote codes & purchase settings supaya cross-device sync jalan
+      void GithubSync.refreshFromPublic();
       await Auth.ensureAdminSeeded();
       Tier.ensureAdminFullTier();
       const u = Auth.current();

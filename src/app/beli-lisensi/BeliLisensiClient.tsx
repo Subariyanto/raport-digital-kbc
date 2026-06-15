@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { CheckCircle2, MessageCircle, KeyRound } from "lucide-react";
 import { Auth } from "@/lib/auth";
 import { CodeStore, fillTemplate, buildWhatsappLink, type PurchaseSettings } from "@/lib/codes";
+import { GithubSync } from "@/lib/github-sync";
 
 export default function BeliLisensiClient() {
   const [purchase, setPurchase] = useState<PurchaseSettings | null>(null);
@@ -18,7 +19,10 @@ export default function BeliLisensiClient() {
   const router = useRouter();
 
   useEffect(() => {
-    setPurchase(CodeStore.getPurchase());
+    // Fetch remote codes & purchase settings dulu, baru read local
+    void GithubSync.refreshFromPublic().finally(() => {
+      setPurchase(CodeStore.getPurchase());
+    });
   }, []);
 
   const handleOrder = () => {
