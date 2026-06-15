@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 
 export default function DashboardClient() {
   const [stats, setStats] = useState({ guru: 0, siswa: 0, kelas: 0, mapel: 0 });
+  const [madrasah, setMadrasah] = useState<{ nama: string; tahun_pelajaran: string | null; semester: number | null } | null>(null);
 
   useEffect(() => {
     setStats({
@@ -14,6 +15,10 @@ export default function DashboardClient() {
       kelas: demoStore.getKelas().length,
       mapel: demoStore.getMapel().length,
     });
+    const m = demoStore.getMadrasah();
+    if (m && m.nama && m.nama.trim()) {
+      setMadrasah({ nama: m.nama, tahun_pelajaran: m.tahun_pelajaran, semester: m.semester });
+    }
   }, []);
 
   const cards = [
@@ -44,7 +49,17 @@ export default function DashboardClient() {
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <h2 className="text-lg font-semibold text-gray-700 mb-2">Selamat Datang!</h2>
         <p className="text-gray-500">Gunakan menu di samping kiri untuk mengakses fitur-fitur Raport Digital Madrasah KBC.</p>
-        <p className="text-gray-400 text-sm mt-2">MI Nurul Hikmah • TA 2024/2025 • Semester 1 (Ganjil)</p>
+        {madrasah ? (
+          <p className="text-gray-400 text-sm mt-2">
+            {madrasah.nama}
+            {madrasah.tahun_pelajaran ? ` · TA ${madrasah.tahun_pelajaran}` : ""}
+            {madrasah.semester ? ` · Semester ${madrasah.semester} (${madrasah.semester === 1 ? "Ganjil" : "Genap"})` : ""}
+          </p>
+        ) : (
+          <p className="text-gray-400 text-sm mt-2">
+            Lengkapi data madrasah Anda di menu <strong>Data Madrasah</strong>.
+          </p>
+        )}
       </div>
     </div>
   );
