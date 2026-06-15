@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { demoStore } from "@/lib/demo-store";
+import { Auth } from "@/lib/auth";
 import toast from "react-hot-toast";
 import { Download, Trash2, RefreshCw } from "lucide-react";
 
@@ -9,6 +10,11 @@ export default function PengaturanPage() {
   const [resetting, setResetting] = useState(false);
 
   const handleBackup = () => {
+    const cur = Auth.current();
+    if (cur && cur.tier === "trial") {
+      toast.error("Backup Data hanya tersedia untuk akun FULL. Cetak Preview (Ctrl+P) tetap bisa dengan watermark TRIAL.");
+      return;
+    }
     const data = {
       madrasah: demoStore.getMadrasah(),
       guru: demoStore.getGuru(),
