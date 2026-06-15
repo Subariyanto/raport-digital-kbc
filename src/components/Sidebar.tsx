@@ -27,6 +27,7 @@ import {
   ShoppingCart,
   ShieldAlert,
   Sparkles,
+  BookOpenCheck,
 } from "lucide-react";
 import { Auth, type AppUser } from "@/lib/auth";
 import { Tier } from "@/lib/tier";
@@ -57,6 +58,7 @@ const baseMenu: MenuItem[] = [
   { label: "Cetak Raport", href: "/cetak-raport", icon: <FileText size={20} /> },
   { label: "Import/Export", href: "/import-export", icon: <FileSpreadsheet size={20} /> },
   { label: "Pengaturan", href: "/pengaturan", icon: <Settings size={20} /> },
+  { label: "Panduan Penggunaan", href: "/panduan", icon: <BookOpenCheck size={20} /> },
 ];
 
 const adminMenu: MenuItem[] = [
