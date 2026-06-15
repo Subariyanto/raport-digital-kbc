@@ -391,29 +391,6 @@ export default function PanduanClient() {
       ),
     },
     {
-      id: "admin-codes",
-      icon: <KeyRound size={16} />,
-      title: "Admin: Kode Aktivasi",
-      body: (
-        <>
-          <p className="mb-3 italic text-sm text-gray-600">Khusus role Admin.</p>
-          <p className="mb-3">
-            Tab <strong>Admin → Kode Aktivasi</strong> untuk generate dan distribusi kode lisensi.
-          </p>
-          <ol className="list-decimal pl-5 space-y-1 text-sm mb-3">
-            <li>Pilih tipe (FULL / TRIAL), jumlah, dan catatan opsional</li>
-            <li>Klik <strong>Generate</strong> → kode random tercipta</li>
-            <li>Klik tombol <strong>Copy</strong> atau <strong>Kirim via WhatsApp</strong></li>
-            <li>Tombol <strong>✏️ Edit</strong> untuk isi pemakai manual (kalau aktivasi via WA)</li>
-            <li>Tombol <strong>Cabut</strong> untuk membatalkan kode</li>
-          </ol>
-          <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">
-            💡 Master code Pokjawas: <code className="bg-white px-1.5 py-0.5 rounded font-mono text-xs">POKJAWAS-JEMBER-RDM-KBC-2026</code>
-          </div>
-        </>
-      ),
-    },
-    {
       id: "admin-pembelian",
       icon: <ShoppingCart size={16} />,
       title: "Admin: Pengaturan Pembelian",
