@@ -52,7 +52,7 @@ export default function CatatanWaliKelasPage() {
       : null;
 
     // 3. Rata-rata ekstrakurikuler
-    const ekskul = demoStore.getEkstrakurikuler().filter(e => e.siswa_id === siswa.id);
+    const ekskul = demoStore.getEkskul().filter(e => e.siswa_id === siswa.id);
     const ekskulNilai = ekskul.filter(e => e.nilai !== null && e.nilai !== undefined);
     const rataEkskul = ekskulNilai.length > 0
       ? ekskulNilai.reduce((s, e) => s + (e.nilai || 0), 0) / ekskulNilai.length
