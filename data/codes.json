@@ -3,9 +3,12 @@
     {
       "code": "FULL-KGJS-T7QN-9Z2Y",
       "prefix": "FULL",
-      "status": "active",
+      "status": "used",
       "createdAt": "2026-06-15T02:27:20.423Z",
-      "note": null
+      "note": null,
+      "usedByNama": "Ahmad",
+      "usedByNip": null,
+      "usedAt": "2026-06-15T06:09:00.000Z"
     },
     {
       "code": "FULL-4T8B-NFL2-3F78",
@@ -25,5 +28,5 @@
     "orderTemplate": "Halo, saya ingin pesan lisensi {APP}.\nNama: \nNIP: \nMadrasah: \n\nSilakan kirim kode aktivasi ke nomor ini, terima kasih 🙏",
     "sendTemplate": "Halo {NAMA},\n\nBerikut kode aktivasi {APP}:\n\nKode: {KODE}\n\nLangkah:\n1. Buka {URL}\n2. Klik Daftar\n3. Isi NIP {NIP}, kode aktivasi, dan password\n\nTerima kasih 🙏"
   },
-  "updatedAt": "2026-06-15T05:23:23.053Z"
+  "updatedAt": "2026-06-15T06:09:30.019Z"
 }
