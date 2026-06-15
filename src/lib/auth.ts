@@ -2,7 +2,7 @@
 "use client";
 
 import { CodeStore, parseCodePrefix, MASTER_CODE } from "./codes";
-import { Tier, type TierKind, defaultTrialExpiresAt } from "./tier";
+import { Tier, type TierKind, defaultTrialExpiresAt, defaultFullExpiresAt } from "./tier";
 
 const KEY_USERS = "rdmkbc_v1_users";
 const KEY_SESSION = "rdmkbc_v1_session";
@@ -18,6 +18,7 @@ export interface AppUser {
   role: UserRole;
   tier: TierKind;       // 'admin' | 'full' | 'trial'
   trialExpiresAt?: string | null; // ISO
+  fullExpiresAt?: string | null;  // ISO (untuk lisensi FULL berbatas waktu, default 1 tahun)
   activatedWith?: string | null;  // kode yang dipakai
   kegiatanCount?: number;         // tracker counter kalau dipakai
   createdAt: string;
@@ -181,6 +182,7 @@ export const Auth = {
       role: "user",
       tier,
       trialExpiresAt,
+      fullExpiresAt: tier === "full" ? defaultFullExpiresAt() : null,
       activatedWith,
       kegiatanCount: 0,
       createdAt: new Date().toISOString(),
@@ -225,7 +227,29 @@ export const Auth = {
     if (!u) throw new Error("User tidak ditemukan");
     u.tier = "full";
     u.trialExpiresAt = null;
+    u.fullExpiresAt = defaultFullExpiresAt(); // default 1 tahun
     if (code) u.activatedWith = code;
+    writeUsers(users);
+  },
+
+  // Edit tier + expiry user (manual override admin)
+  updateTier(userId: string, opts: { tier: TierKind; trialExpiresAt?: string | null; fullExpiresAt?: string | null }) {
+    const users = readUsers();
+    const u = users.find((x) => x.id === userId);
+    if (!u) throw new Error("User tidak ditemukan");
+    if (u.role === "admin") throw new Error("Tier admin tidak bisa diubah");
+    u.tier = opts.tier;
+    if (opts.tier === "trial") {
+      u.trialExpiresAt = opts.trialExpiresAt || defaultTrialExpiresAt();
+      u.fullExpiresAt = null;
+    } else if (opts.tier === "full") {
+      u.trialExpiresAt = null;
+      u.fullExpiresAt = opts.fullExpiresAt || defaultFullExpiresAt();
+    } else {
+      // tier=admin via update tidak boleh (di-block di awal), abaikan
+      u.trialExpiresAt = null;
+      u.fullExpiresAt = null;
+    }
     writeUsers(users);
   },
 
@@ -236,6 +260,7 @@ export const Auth = {
     if (u.role === "admin") throw new Error("Admin tidak bisa di-downgrade");
     u.tier = "trial";
     u.trialExpiresAt = defaultTrialExpiresAt();
+    u.fullExpiresAt = null;
     writeUsers(users);
   },
 
