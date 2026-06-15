@@ -205,7 +205,7 @@ export default function CetakRaportPage() {
           </table>
 
           {/* Kokurikuler */}
-          <h4 className="font-bold text-sm mb-2">B. KOKURIKULER (Projek Penguatan Profil Pelajar Pancasila Rahmatan lil Alamin)</h4>
+          <h4 className="font-bold text-sm mb-2">B. KOKURIKULER (Projek Penguatan Profil Lulusan dan KBC)</h4>
           <table className="w-full text-sm border border-gray-300 mb-2">
             <thead>
               <tr className="bg-gray-100">
