@@ -189,12 +189,16 @@ export function generateCatatanWaliKelas(params: {
   sakit: number;
   izin: number;
   alpa: number;
+  rataKoko?: number | null;
+  rataEkskul?: number | null;
+  kegiatanKoko?: string[];
+  kegiatanEkskul?: string[];
 }): string {
-  const { namaSiswa, rataRata, alpa } = params;
+  const { namaSiswa, rataRata, alpa, rataKoko, rataEkskul, kegiatanKoko, kegiatanEkskul } = params;
   const nama = `Ananda ${namaSiswa}`;
 
+  // 1. Bagian akademik (intrakurikuler)
   let catatan = "";
-
   if (rataRata >= 85) {
     catatan = `${nama} menunjukkan perkembangan belajar yang sangat baik selama semester ini. Prestasi akademik yang diraih patut diapresiasi.`;
   } else if (rataRata >= 70) {
@@ -203,9 +207,67 @@ export function generateCatatanWaliKelas(params: {
     catatan = `${nama} perlu meningkatkan motivasi dan kedisiplinan belajar. Dengan pendampingan yang lebih intensif dari guru dan orang tua, diharapkan capaian belajar pada semester berikutnya dapat meningkat.`;
   }
 
+  // 2. Bagian kokurikuler
+  if (rataKoko !== null && rataKoko !== undefined && !isNaN(rataKoko) && rataKoko > 0) {
+    const dafKoko = kegiatanKoko && kegiatanKoko.length > 0 ? ` (${kegiatanKoko.slice(0, 2).join(", ")})` : "";
+    if (rataKoko >= 85) {
+      catatan += ` Pada kegiatan kokurikuler${dafKoko}, ${nama} menunjukkan kreativitas, kolaborasi, dan tanggung jawab yang sangat baik.`;
+    } else if (rataKoko >= 70) {
+      catatan += ` Partisipasi pada kegiatan kokurikuler${dafKoko} berjalan baik dan dapat ditingkatkan dengan keterlibatan yang lebih aktif.`;
+    } else {
+      catatan += ` Keterlibatan pada kegiatan kokurikuler${dafKoko} masih perlu didorong agar lebih konsisten dan bersemangat.`;
+    }
+  }
+
+  // 3. Bagian ekstrakurikuler
+  if (rataEkskul !== null && rataEkskul !== undefined && !isNaN(rataEkskul) && rataEkskul > 0) {
+    const dafEks = kegiatanEkskul && kegiatanEkskul.length > 0 ? ` (${kegiatanEkskul.slice(0, 2).join(", ")})` : "";
+    if (rataEkskul >= 85) {
+      catatan += ` Pada kegiatan ekstrakurikuler${dafEks}, bakat, minat, dan disiplin ${nama} berkembang dengan sangat baik.`;
+    } else if (rataEkskul >= 70) {
+      catatan += ` Pada kegiatan ekstrakurikuler${dafEks}, ${nama} menunjukkan minat yang baik dan diharapkan terus berlatih.`;
+    } else {
+      catatan += ` Pada kegiatan ekstrakurikuler${dafEks}, kehadiran dan latihan masih perlu ditingkatkan.`;
+    }
+  }
+
+  // 4. Catatan kehadiran
   if (alpa > 3) {
     catatan += ` Perlu diperhatikan tingkat kehadiran yang masih perlu ditingkatkan.`;
   }
 
   return catatan;
 }
+
+// ========================================
+// Preset keterangan kokurikuler (Tema P5 / Profil Lulusan KBC)
+// Dipakai sebagai opsi dropdown di form input kokurikuler.
+// ========================================
+export const PRESET_KETERANGAN_KOKURIKULER: string[] = [
+  "Tema: Bhinneka Tunggal Ika - dimensi berkebinekaan global",
+  "Tema: Suara Demokrasi - dimensi bernalar kritis",
+  "Tema: Gaya Hidup Berkelanjutan - dimensi peduli lingkungan",
+  "Tema: Kearifan Lokal - dimensi cinta tanah air",
+  "Tema: Bangunlah Jiwa dan Raganya - dimensi mandiri & sehat",
+  "Tema: Berekayasa dan Berteknologi untuk NKRI",
+  "Tema: Kewirausahaan - dimensi kreatif & gotong royong",
+  "Tema: Profil Pelajar Pancasila - berakhlak mulia & gotong royong",
+  "Tema: Profil Lulusan KBC - cinta Allah, Rasul, ilmu, sesama, & lingkungan",
+  "Penguatan karakter rahmatan lil alamin",
+];
+
+// ========================================
+// Preset keterangan ekstrakurikuler (peran/prestasi/keterampilan)
+// ========================================
+export const PRESET_KETERANGAN_EKSTRAKURIKULER: string[] = [
+  "Aktif sebagai anggota, kehadiran & disiplin baik",
+  "Aktif sebagai anggota, perlu peningkatan keterampilan",
+  "Berpartisipasi sebagai pengurus inti",
+  "Mengikuti lomba tingkat madrasah",
+  "Mengikuti lomba tingkat kecamatan/kabupaten",
+  "Mengikuti lomba tingkat provinsi/nasional",
+  "Meraih prestasi tingkat madrasah",
+  "Meraih prestasi tingkat kabupaten/provinsi",
+  "Pengembangan bakat & minat sesuai potensi",
+  "Penguatan disiplin, kerja sama, & kepemimpinan",
+];

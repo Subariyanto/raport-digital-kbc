@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Kokurikuler } from "@/lib/types";
-import { nilaiToPredikat } from "@/lib/deskripsi-generator";
+import { nilaiToPredikat, PRESET_KETERANGAN_KOKURIKULER } from "@/lib/deskripsi-generator";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
@@ -186,7 +186,19 @@ export default function KokurikulerPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
-                  <textarea value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} rows={3} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Tema/dimensi profil pelajar yang dikembangkan..." />
+                  <select
+                    value={PRESET_KETERANGAN_KOKURIKULER.includes(form.keterangan) ? form.keterangan : (form.keterangan ? "__custom__" : "")}
+                    onChange={(e) => {
+                      if (e.target.value === "__custom__") return;
+                      setForm({ ...form, keterangan: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none mb-2"
+                  >
+                    <option value="">-- Pilih preset / kosongkan untuk custom --</option>
+                    {PRESET_KETERANGAN_KOKURIKULER.map(p => <option key={p} value={p}>{p}</option>)}
+                    <option value="__custom__">[Custom — ketik manual di kotak bawah]</option>
+                  </select>
+                  <textarea value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Tema/dimensi profil pelajar yang dikembangkan..." />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="submit" className="flex-1 bg-primary hover:bg-primary-800 text-white py-2 rounded-lg font-medium transition-colors">{editing ? "Update" : "Simpan"}</button>
