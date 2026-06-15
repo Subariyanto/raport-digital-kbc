@@ -92,7 +92,7 @@ export default function LoginClient() {
           </div>
 
           <div className="mt-5 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
-            <strong>Akun admin default:</strong> <code>admin@local</code> / <code>admin123</code>
+            <strong>Akun admin default:</strong> <code>admin@local</code> / <code>@riyant1970</code>
             <br />
             Ganti password segera setelah login.
           </div>

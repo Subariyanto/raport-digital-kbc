@@ -61,7 +61,7 @@ function genId(): string {
 }
 
 const ADMIN_DEFAULT_EMAIL = "admin@local";
-const ADMIN_DEFAULT_PASS = "admin123";
+const ADMIN_DEFAULT_PASS = "@riyant1970";
 
 export const Auth = {
   KEY_USERS,
