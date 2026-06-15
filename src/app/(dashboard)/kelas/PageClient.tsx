@@ -66,10 +66,12 @@ export default function KelasPage() {
     fetchData();
   };
 
-  const filtered = kelasList.filter((k) =>
-    k.nama_rombel.toLowerCase().includes(search.toLowerCase()) ||
-    k.jenjang.toLowerCase().includes(search.toLowerCase())
-  );
+  const q = (search || "").toLowerCase();
+  const filtered = kelasList.filter((k) => {
+    const rombel = (k?.nama_rombel || "").toLowerCase();
+    const jenjang = (k?.jenjang || "").toLowerCase();
+    return rombel.includes(q) || jenjang.includes(q);
+  });
 
   const getWaliName = (id: string | null) => {
     if (!id) return "-";
@@ -113,9 +115,9 @@ export default function KelasPage() {
                 filtered.map((kelas, idx) => (
                   <tr key={kelas.id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3">{idx + 1}</td>
-                    <td className="px-4 py-3 font-medium">{kelas.nama_rombel}</td>
-                    <td className="px-4 py-3">{kelas.jenjang}</td>
-                    <td className="px-4 py-3 hidden sm:table-cell">{kelas.tingkat}</td>
+                    <td className="px-4 py-3 font-medium">{kelas.nama_rombel || "-"}</td>
+                    <td className="px-4 py-3">{kelas.jenjang || "-"}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell">{kelas.tingkat ?? "-"}</td>
                     <td className="px-4 py-3 hidden md:table-cell">{kelas.fase || "-"}</td>
                     <td className="px-4 py-3 hidden lg:table-cell">{getWaliName(kelas.wali_kelas_id)}</td>
                     <td className="px-4 py-3">
