@@ -15,6 +15,7 @@ interface SiswaDetail {
   jenis_kelamin: string;
   agama: string;
   alamat: string;
+  foto_url?: string | null;
   // Ayah
   nama_ayah: string;
   ttl_ayah?: string;
@@ -88,6 +89,37 @@ export default function BukuIndukPage() {
     window.print();
   };
 
+  const handleUploadFoto = async (file: File) => {
+    if (!selectedSiswa) return;
+    if (file.size > 800 * 1024) {
+      toast.error("Ukuran foto maksimal 800 KB. Kompres dulu lalu upload ulang.");
+      return;
+    }
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onerror = () => rej(r.error);
+      r.onload = () => res(r.result as string);
+      r.readAsDataURL(file);
+    });
+    const all = demoStore.getSiswa();
+    const updated = all.map((s: any) => s.id === selectedSiswa.id ? { ...s, foto_url: dataUrl } : s);
+    demoStore.setSiswa(updated as any);
+    setSelectedSiswa({ ...selectedSiswa, foto_url: dataUrl });
+    setSiswaList(updated as any);
+    toast.success("Foto siswa disimpan");
+  };
+
+  const handleHapusFoto = () => {
+    if (!selectedSiswa) return;
+    if (!confirm("Hapus foto siswa ini?")) return;
+    const all = demoStore.getSiswa();
+    const updated = all.map((s: any) => s.id === selectedSiswa.id ? { ...s, foto_url: null } : s);
+    demoStore.setSiswa(updated as any);
+    setSelectedSiswa({ ...selectedSiswa, foto_url: null });
+    setSiswaList(updated as any);
+    toast.success("Foto siswa dihapus");
+  };
+
   if (selectedSiswa) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -108,16 +140,45 @@ export default function BukuIndukPage() {
           </div>
 
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-24 h-32 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center">
-              <User size={40} className="text-gray-400" />
+            <div className="w-24 h-32 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
+              {selectedSiswa.foto_url ? (
+                <img src={selectedSiswa.foto_url} alt={`Foto ${selectedSiswa.nama}`} className="w-full h-full object-cover" />
+              ) : (
+                <User size={40} className="text-gray-400" />
+              )}
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-bold text-gray-800">{selectedSiswa.nama}</h2>
               <p className="text-sm text-gray-500">NIS: {selectedSiswa.nis} | NISN: {selectedSiswa.nisn || "-"}</p>
               <p className="text-sm text-gray-500">Kelas: {getKelasName(selectedSiswa.kelas_id)}</p>
               <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium ${selectedSiswa.status === "aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                 {selectedSiswa.status}
               </span>
+              <div className="mt-2 flex flex-wrap gap-2 print:hidden">
+                <label className="flex items-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">
+                  {selectedSiswa.foto_url ? "Ganti Foto" : "Upload Foto"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUploadFoto(f);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {selectedSiswa.foto_url && (
+                  <button
+                    type="button"
+                    onClick={handleHapusFoto}
+                    className="flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1.5 rounded-lg text-xs font-medium"
+                  >
+                    Hapus Foto
+                  </button>
+                )}
+                <span className="text-[10px] text-gray-400 self-center">Format JPG/PNG, maks 800 KB</span>
+              </div>
             </div>
           </div>
 
