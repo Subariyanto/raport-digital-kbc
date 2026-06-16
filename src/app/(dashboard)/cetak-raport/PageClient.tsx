@@ -141,6 +141,35 @@ export default function CetakRaportPage() {
     window.print();
   };
 
+  const handleUploadFotoSiswa = async (file: File) => {
+    if (!raportData?.siswa?.id) return;
+    if (file.size > 800 * 1024) {
+      toast.error("Ukuran foto maksimal 800 KB. Kompres dulu lalu upload ulang.");
+      return;
+    }
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onerror = () => rej(r.error);
+      r.onload = () => res(r.result as string);
+      r.readAsDataURL(file);
+    });
+    const all = demoStore.getSiswa();
+    const updated = all.map((s: any) => s.id === raportData.siswa.id ? { ...s, foto_url: dataUrl } : s);
+    demoStore.setSiswa(updated as any);
+    setRaportData({ ...raportData, siswa: { ...raportData.siswa, foto_url: dataUrl } });
+    toast.success("Foto siswa disimpan");
+  };
+
+  const handleHapusFotoSiswa = () => {
+    if (!raportData?.siswa?.id) return;
+    if (!confirm("Hapus foto siswa ini?")) return;
+    const all = demoStore.getSiswa();
+    const updated = all.map((s: any) => s.id === raportData.siswa.id ? { ...s, foto_url: null } : s);
+    demoStore.setSiswa(updated as any);
+    setRaportData({ ...raportData, siswa: { ...raportData.siswa, foto_url: null } });
+    toast.success("Foto siswa dihapus");
+  };
+
   return (
     <div>
       <div className="print:hidden">
@@ -204,14 +233,53 @@ export default function CetakRaportPage() {
           {/* Judul (di bawah KOP, di bawah garis) */}
           <h2 className="text-lg font-bold uppercase text-center mb-4">LAPORAN HASIL BELAJAR</h2>
 
-          {/* Identitas Siswa */}
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm mb-6">
-            <div className="flex"><span className="w-32 text-gray-600">Nama</span><span>: {raportData.siswa?.nama}</span></div>
-            <div className="flex"><span className="w-32 text-gray-600">NIS/NISN</span><span>: {raportData.siswa?.nis} / {raportData.siswa?.nisn}</span></div>
-            <div className="flex"><span className="w-32 text-gray-600">Kelas</span><span>: {raportData.kelas?.nama_rombel}</span></div>
-            <div className="flex"><span className="w-32 text-gray-600">Fase</span><span>: {raportData.kelas?.fase}</span></div>
-            <div className="flex"><span className="w-32 text-gray-600">Semester</span><span>: {raportData.kelas?.semester === 1 ? "1 (Ganjil)" : "2 (Genap)"}</span></div>
-            <div className="flex"><span className="w-32 text-gray-600">Tahun Pelajaran</span><span>: {raportData.kelas?.tahun_pelajaran}</span></div>
+          {/* Identitas Siswa (foto kiri + data kanan) */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex-shrink-0">
+              <div className="w-24 h-32 bg-gray-50 border-2 border-gray-300 rounded-md overflow-hidden flex items-center justify-center">
+                {raportData.siswa?.foto_url ? (
+                  <img
+                    src={raportData.siswa.foto_url}
+                    alt={`Foto ${raportData.siswa?.nama || "siswa"}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[10px] text-gray-400 text-center px-1">3 x 4</span>
+                )}
+              </div>
+              <div className="mt-2 print:hidden flex flex-col gap-1">
+                <label className="flex items-center justify-center gap-1 bg-primary hover:bg-primary-800 text-white px-2 py-1 rounded text-[11px] font-medium cursor-pointer">
+                  {raportData.siswa?.foto_url ? "Ganti Foto" : "Upload Foto"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUploadFotoSiswa(f);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {raportData.siswa?.foto_url && (
+                  <button
+                    type="button"
+                    onClick={handleHapusFotoSiswa}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded text-[11px] font-medium"
+                  >
+                    Hapus Foto
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm">
+              <div className="flex"><span className="w-32 text-gray-600">Nama</span><span>: {raportData.siswa?.nama}</span></div>
+              <div className="flex"><span className="w-32 text-gray-600">NIS/NISN</span><span>: {raportData.siswa?.nis} / {raportData.siswa?.nisn}</span></div>
+              <div className="flex"><span className="w-32 text-gray-600">Kelas</span><span>: {raportData.kelas?.nama_rombel}</span></div>
+              <div className="flex"><span className="w-32 text-gray-600">Fase</span><span>: {raportData.kelas?.fase}</span></div>
+              <div className="flex"><span className="w-32 text-gray-600">Semester</span><span>: {raportData.kelas?.semester === 1 ? "1 (Ganjil)" : "2 (Genap)"}</span></div>
+              <div className="flex"><span className="w-32 text-gray-600">Tahun Pelajaran</span><span>: {raportData.kelas?.tahun_pelajaran}</span></div>
+            </div>
           </div>
 
           {/* Nilai Akademik (Intrakurikuler) */}
