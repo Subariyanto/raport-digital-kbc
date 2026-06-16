@@ -159,6 +159,30 @@ export const demoStore = {
     return empty;
   },
 
+  /**
+   * Tanggal Cetak Raport (string ISO YYYY-MM-DD). Dipakai di halaman Cetak Raport
+   * supaya TTD otomatis terisi tanggal yang di-set admin / wali kelas di Pengaturan.
+   * Default: hari ini (kalau belum di-set).
+   */
+  getTanggalCetak: (): string => {
+    if (typeof window === "undefined") return "";
+    try {
+      const v = window.localStorage.getItem("rdm_tanggal_cetak");
+      if (v && typeof v === "string") return v;
+    } catch {}
+    return new Date().toISOString().slice(0, 10);
+  },
+  setTanggalCetak: (isoDate: string): boolean => {
+    if (typeof window === "undefined") return false;
+    if (isTrialLocked()) { notifyLocked(); return false; }
+    if (!isoDate) {
+      window.localStorage.removeItem("rdm_tanggal_cetak");
+    } else {
+      window.localStorage.setItem("rdm_tanggal_cetak", isoDate);
+    }
+    return true;
+  },
+
   getGuru: () => getStore<Guru>("guru", defaultGuru),
   setGuru: (data: Guru[]) => setStore("guru", data),
 

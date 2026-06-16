@@ -29,6 +29,22 @@ function readAux(key: string): Array<{
   }
 }
 
+// Helper: format YYYY-MM-DD -> "16 Juni 2026". Fallback ke garis kosong kalau invalid.
+const BULAN_ID = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+function formatTanggalIndo(iso: string | undefined | null): string {
+  if (!iso) return "....................";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return "....................";
+  const tahun = m[1];
+  const bulan = BULAN_ID[parseInt(m[2], 10) - 1] || "-";
+  const hari = parseInt(m[3], 10);
+  if (Number.isNaN(hari)) return "....................";
+  return `${hari} ${bulan} ${tahun}`;
+}
+
 export default function CetakRaportPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
@@ -113,7 +129,7 @@ export default function CetakRaportPage() {
             })
           : "");
 
-    setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks });
+    setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks, tanggalCetak: demoStore.getTanggalCetak() });
   }, [selectedSiswa, selectedKelas]);
 
   const handlePrint = () => {
@@ -311,7 +327,7 @@ export default function CetakRaportPage() {
               <p>NIP. {raportData.madrasah.nip_kepala || "-"}</p>
             </div>
             <div className="text-center">
-              <p>{raportData.madrasah.kabupaten}, .................... 20....</p>
+              <p>{`${raportData.madrasah.kabupaten || "..."}, ${formatTanggalIndo(raportData.tanggalCetak)}`}</p>
               <p>Wali Kelas</p>
               <div className="h-16"></div>
               <p className="font-bold underline">................................</p>

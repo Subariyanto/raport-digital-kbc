@@ -1,13 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Auth } from "@/lib/auth";
 import toast from "react-hot-toast";
-import { Download, Trash2, RefreshCw } from "lucide-react";
+import { Download, RefreshCw, Calendar, Save } from "lucide-react";
 
 export default function PengaturanPage() {
   const [resetting, setResetting] = useState(false);
+  const [tanggalCetak, setTanggalCetak] = useState<string>("");
+
+  useEffect(() => {
+    setTanggalCetak(demoStore.getTanggalCetak());
+  }, []);
+
+  const handleSaveTanggal = () => {
+    if (!tanggalCetak) {
+      toast.error("Pilih tanggal dulu");
+      return;
+    }
+    const ok = demoStore.setTanggalCetak(tanggalCetak);
+    if (ok) toast.success("Tanggal cetak raport disimpan");
+  };
+
+  const handleResetTanggal = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    demoStore.setTanggalCetak(today);
+    setTanggalCetak(today);
+    toast.success("Tanggal direset ke hari ini");
+  };
 
   const handleBackup = () => {
     const cur = Auth.current();
@@ -91,6 +112,43 @@ export default function PengaturanPage() {
               <span className="text-gray-600">Kurikulum</span>
               <span className="font-medium">KBC Kemenag 2025</span>
             </div>
+          </div>
+        </div>
+
+        {/* Tanggal Cetak Raport */}
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <h2 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+            <Calendar size={18} /> Tanggal Cetak Raport
+          </h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Tanggal ini akan dipakai otomatis di tanda tangan halaman Cetak Raport
+            (“{`<Kabupaten>, <Tanggal>`}”). Update di awal setiap pembagian raport.
+          </p>
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal</label>
+              <input
+                type="date"
+                value={tanggalCetak}
+                onChange={(e) => setTanggalCetak(e.target.value)}
+                className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveTanggal}
+              className="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Save size={16} /> Simpan Tanggal
+            </button>
+            <button
+              type="button"
+              onClick={handleResetTanggal}
+              className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              title="Set ke tanggal hari ini"
+            >
+              <RefreshCw size={14} /> Hari Ini
+            </button>
           </div>
         </div>
 
