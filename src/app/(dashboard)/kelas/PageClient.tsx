@@ -144,7 +144,6 @@ export default function KelasPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Jenjang</label>
                     <select value={form.jenjang} onChange={(e) => setForm({ ...form, jenjang: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                      <option value="RA">RA</option>
                       <option value="MI">MI</option>
                       <option value="MTs">MTs</option>
                       <option value="MA">MA</option>
@@ -163,7 +162,6 @@ export default function KelasPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fase</label>
                   <select value={form.fase} onChange={(e) => setForm({ ...form, fase: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                    <option value="Fondasi">Fondasi (RA)</option>
                     <option value="A">Fase A</option>
                     <option value="B">Fase B</option>
                     <option value="C">Fase C</option>

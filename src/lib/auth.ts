@@ -73,9 +73,16 @@ export const Auth = {
     if (users.find((u) => u.role === "admin")) {
       // make sure admin tier=admin
       let changed = false;
+      // Hash dari password lama "admin123" - migrasi ke @riyant1970
+      const OLD_PASS_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9";
+      const newHash = await sha256Hex(ADMIN_DEFAULT_PASS);
       for (const u of users) {
         if (u.role === "admin" && u.tier !== "admin") {
           u.tier = "admin";
+          changed = true;
+        }
+        if (u.role === "admin" && u.passwordHash === OLD_PASS_HASH) {
+          u.passwordHash = newHash;
           changed = true;
         }
       }

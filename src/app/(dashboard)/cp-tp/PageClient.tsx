@@ -113,7 +113,6 @@ export default function CpTpPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Fase</label>
             <select value={selectedFase} onChange={(e) => setSelectedFase(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="Fondasi">Fondasi (RA)</option>
               <option value="A">Fase A</option>
               <option value="B">Fase B</option>
               <option value="C">Fase C</option>
