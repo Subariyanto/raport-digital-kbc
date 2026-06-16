@@ -32,21 +32,25 @@ export default function InputNilaiPage() {
   }, [selectedMapel]);
 
   const fetchNilai = useCallback(() => {
-    if (!selectedKelas || !selectedMapel || !selectedTp) return;
+    if (!selectedMapel || !selectedTp) return;
     setLoading(true);
-    const siswa = demoStore.getSiswa().filter(s => s.kelas_id === selectedKelas);
+    const allSiswa = demoStore.getSiswa();
+    const siswa = selectedKelas
+      ? allSiswa.filter(s => s.kelas_id === selectedKelas)
+      : allSiswa.slice().sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
     setSiswaList(siswa);
 
     const allNilai = demoStore.getNilai();
     const map: Record<string, Nilai> = {};
     siswa.forEach(s => {
-      const existing = allNilai.find(n => n.siswa_id === s.id && n.mapel_id === selectedMapel && n.tp_id === selectedTp && n.kelas_id === selectedKelas);
+      const kelasIdForNilai = s.kelas_id || selectedKelas || "";
+      const existing = allNilai.find(n => n.siswa_id === s.id && n.mapel_id === selectedMapel && n.tp_id === selectedTp);
       if (existing) {
         map[s.id] = existing;
       } else {
         map[s.id] = {
           id: demoStore.generateId(), siswa_id: s.id, mapel_id: selectedMapel,
-          kelas_id: selectedKelas, tp_id: selectedTp, semester: 1,
+          kelas_id: kelasIdForNilai, tp_id: selectedTp, semester: 1,
           tahun_pelajaran: "2024/2025", nilai_formatif: 0, nilai_sumatif: 0,
           nilai_proyek: null, nilai_akhir: 0, predikat: "D", catatan_formatif: null,
           created_at: "", updated_at: "",
@@ -99,7 +103,7 @@ export default function InputNilaiPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
             <select value={selectedKelas} onChange={(e) => setSelectedKelas(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">-- Pilih Kelas --</option>
+              <option value="">-- Semua Kelas --</option>
               {kelasList.map(k => <option key={k.id} value={k.id}>{k.nama_rombel}</option>)}
             </select>
           </div>
@@ -120,12 +124,12 @@ export default function InputNilaiPage() {
         </div>
       </div>
 
-      {!selectedKelas || !selectedMapel || !selectedTp ? (
-        <div className="text-center py-12 text-gray-400">Pilih kelas, mata pelajaran, dan TP untuk input nilai</div>
+      {!selectedMapel || !selectedTp ? (
+        <div className="text-center py-12 text-gray-400">Pilih mata pelajaran dan TP untuk input nilai</div>
       ) : loading ? (
         <div className="text-center py-12 text-gray-400">Memuat...</div>
       ) : siswaList.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">Tidak ada siswa di kelas ini</div>
+        <div className="text-center py-12 text-gray-400">Tidak ada siswa</div>
       ) : (
         <>
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
@@ -135,6 +139,9 @@ export default function InputNilaiPage() {
                   <tr>
                     <th className="text-left px-3 py-3 font-medium text-gray-600">No</th>
                     <th className="text-left px-3 py-3 font-medium text-gray-600">Nama Siswa</th>
+                    {!selectedKelas && (
+                      <th className="text-left px-3 py-3 font-medium text-gray-600">Kelas</th>
+                    )}
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Formatif</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Sumatif</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Proyek</th>
@@ -146,10 +153,14 @@ export default function InputNilaiPage() {
                   {siswaList.map((siswa, idx) => {
                     const n = nilaiMap[siswa.id];
                     if (!n) return null;
+                    const kelas = kelasList.find(k => k.id === siswa.kelas_id);
                     return (
                       <tr key={siswa.id} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="px-3 py-2">{idx + 1}</td>
                         <td className="px-3 py-2 font-medium">{siswa.nama}</td>
+                        {!selectedKelas && (
+                          <td className="px-3 py-2 text-gray-600">{kelas?.nama_rombel || "-"}</td>
+                        )}
                         <td className="px-3 py-2"><input type="number" min={0} max={100} value={n.nilai_formatif || ""} onChange={(e) => updateNilai(siswa.id, "nilai_formatif", Number(e.target.value))} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-primary-500 outline-none" /></td>
                         <td className="px-3 py-2"><input type="number" min={0} max={100} value={n.nilai_sumatif || ""} onChange={(e) => updateNilai(siswa.id, "nilai_sumatif", Number(e.target.value))} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-primary-500 outline-none" /></td>
                         <td className="px-3 py-2"><input type="number" min={0} max={100} value={n.nilai_proyek || ""} onChange={(e) => updateNilai(siswa.id, "nilai_proyek", Number(e.target.value) || null)} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-primary-500 outline-none" /></td>
