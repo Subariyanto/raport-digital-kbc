@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Siswa, Kelas } from "@/lib/types";
 import {
@@ -10,8 +10,19 @@ import {
 } from "@/lib/deskripsi-generator";
 import { Auth } from "@/lib/auth";
 import { Tier } from "@/lib/tier";
-import { Printer } from "lucide-react";
+import { Printer, Eye, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
+
+function toRoman(n: number): string {
+  if (n === 12) return "XII";
+  if (n === 11) return "XI";
+  const map: [number, string][] = [
+    [10, "X"], [9, "IX"], [8, "VIII"], [7, "VII"], [6, "VI"],
+    [5, "V"], [4, "IV"], [3, "III"], [2, "II"], [1, "I"],
+  ];
+  for (const [v, s] of map) if (n === v) return s;
+  return String(n);
+}
 
 // Helper: baca deskripsi aux (kokurikuler / ekstrakurikuler) dari localStorage
 function readAux(key: string): Array<{
@@ -48,23 +59,59 @@ function formatTanggalIndo(iso: string | undefined | null): string {
 export default function CetakRaportPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
-  const [selectedKelas, setSelectedKelas] = useState("");
+  const [selectedTingkat, setSelectedTingkat] = useState<string>("");
+  const [selectedRombel, setSelectedRombel] = useState<string>("");
   const [selectedSiswa, setSelectedSiswa] = useState("");
   const [raportData, setRaportData] = useState<any>(null);
 
   useEffect(() => { setKelasList(demoStore.getKelas()); }, []);
 
+  const tingkatOptions = useMemo(() => {
+    const set = new Set<number>();
+    kelasList.forEach(k => {
+      if (typeof k.tingkat === "number" && k.tingkat > 0) set.add(k.tingkat);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [kelasList]);
+
+  const rombelOptions = useMemo(() => {
+    if (!selectedTingkat) return [] as Kelas[];
+    const t = Number(selectedTingkat);
+    return kelasList
+      .filter(k => k.tingkat === t)
+      .sort((a, b) => (a.nama_rombel || "").localeCompare(b.nama_rombel || ""));
+  }, [kelasList, selectedTingkat]);
+
+  // Reset rombel & siswa kalau tingkat berubah
+  useEffect(() => { setSelectedRombel(""); setSelectedSiswa(""); setRaportData(null); }, [selectedTingkat]);
+  useEffect(() => { setSelectedSiswa(""); setRaportData(null); }, [selectedRombel]);
+
+  // Daftar siswa filter berdasarkan tingkat + rombel
   useEffect(() => {
-    if (!selectedKelas) { setSiswaList([]); return; }
-    setSiswaList(demoStore.getSiswa().filter(s => s.kelas_id === selectedKelas));
-  }, [selectedKelas]);
+    if (!selectedTingkat) { setSiswaList([]); return; }
+    const allSiswa = demoStore.getSiswa();
+    const t = Number(selectedTingkat);
+    const kelasIdsAtTingkat = new Set(
+      kelasList.filter(k => k.tingkat === t).map(k => k.id)
+    );
+    let siswa: Siswa[];
+    if (selectedRombel) {
+      siswa = allSiswa.filter(s => s.kelas_id === selectedRombel);
+    } else {
+      siswa = allSiswa.filter(s => s.kelas_id && kelasIdsAtTingkat.has(s.kelas_id));
+    }
+    siswa = siswa.slice().sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
+    setSiswaList(siswa);
+  }, [selectedTingkat, selectedRombel, kelasList]);
 
   useEffect(() => {
-    if (!selectedSiswa || !selectedKelas) { setRaportData(null); return; }
+    if (!selectedSiswa) { setRaportData(null); return; }
+    const siswa = demoStore.getSiswa().find(s => s.id === selectedSiswa);
+    if (!siswa) { setRaportData(null); return; }
+    const effectiveKelasId = siswa.kelas_id || "";
 
     const madrasah = demoStore.getMadrasah();
-    const siswa = demoStore.getSiswa().find(s => s.id === selectedSiswa);
-    const kelas = demoStore.getKelas().find(k => k.id === selectedKelas);
+    const kelas = demoStore.getKelas().find(k => k.id === effectiveKelasId);
     const mapelList = demoStore.getMapel();
     const allNilai = demoStore.getNilai();
     const allDeskripsi = demoStore.getDeskripsi();
@@ -73,11 +120,11 @@ export default function CetakRaportPage() {
     const allKoko = demoStore.getKokurikuler();
     const allCatatan = demoStore.getCatatan();
 
-    // Build nilai per mapel
+    // Build nilai per mapel (rata-rata semua TP yang ada untuk siswa+mapel)
     const nilaiPerMapel = mapelList.map(mapel => {
-      const nilaiSiswa = allNilai.filter(n => n.siswa_id === selectedSiswa && n.mapel_id === mapel.id && n.kelas_id === selectedKelas);
+      const nilaiSiswa = allNilai.filter(n => n.siswa_id === selectedSiswa && n.mapel_id === mapel.id);
       const avg = nilaiSiswa.length > 0 ? Math.round(nilaiSiswa.reduce((sum, n) => sum + (n.nilai_akhir || 0), 0) / nilaiSiswa.length) : null;
-      const deskripsi = allDeskripsi.find(d => d.siswa_id === selectedSiswa && d.mapel_id === mapel.id && d.kelas_id === selectedKelas);
+      const deskripsi = allDeskripsi.find(d => d.siswa_id === selectedSiswa && d.mapel_id === mapel.id);
       const pred = nilaiToPredikat(avg);
       return {
         mapel: mapel.nama,
@@ -89,24 +136,24 @@ export default function CetakRaportPage() {
       };
     });
 
-    const presensi = allPresensi.find(p => p.siswa_id === selectedSiswa && p.kelas_id === selectedKelas);
-    const ekskul = allEkskul.filter(e => e.siswa_id === selectedSiswa && e.kelas_id === selectedKelas);
-    const koko = allKoko.filter(k => k.siswa_id === selectedSiswa && k.kelas_id === selectedKelas);
-    const catatan = allCatatan.find(c => c.siswa_id === selectedSiswa && c.kelas_id === selectedKelas);
+    const presensi = allPresensi.find(p => p.siswa_id === selectedSiswa);
+    const ekskul = allEkskul.filter(e => e.siswa_id === selectedSiswa);
+    const koko = allKoko.filter(k => k.siswa_id === selectedSiswa);
+    const catatan = allCatatan.find(c => c.siswa_id === selectedSiswa);
 
     // Deskripsi naratif kokurikuler & ekstrakurikuler.
     // Prioritas: yang sudah disimpan via menu Deskripsi Otomatis;
     // kalau belum ada, auto-generate dari data kegiatan supaya raport tidak kosong.
     const savedKoko = readAux("deskripsi_kokurikuler").find(
-      d => d.siswa_id === selectedSiswa && d.kelas_id === selectedKelas
+      d => d.siswa_id === selectedSiswa
     )?.deskripsi_text || "";
     const savedEks = readAux("deskripsi_ekstrakurikuler").find(
-      d => d.siswa_id === selectedSiswa && d.kelas_id === selectedKelas
+      d => d.siswa_id === selectedSiswa
     )?.deskripsi_text || "";
 
     const deskKoko = savedKoko
       ? savedKoko
-      : (siswa && koko.length > 0
+      : (koko.length > 0
           ? generateDeskripsiKokurikuler({
               namaSiswa: siswa.nama,
               kegiatan: koko.map(k => ({
@@ -118,7 +165,7 @@ export default function CetakRaportPage() {
           : "");
     const deskEks = savedEks
       ? savedEks
-      : (siswa && ekskul.length > 0
+      : (ekskul.length > 0
           ? generateDeskripsiEkstrakurikuler({
               namaSiswa: siswa.nama,
               kegiatan: ekskul.map((e: any) => ({
@@ -130,7 +177,7 @@ export default function CetakRaportPage() {
           : "");
 
     setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks, tanggalCetak: demoStore.getTanggalCetak(), waliKelas: kelas?.wali_kelas_id ? demoStore.getGuru().find(g => g.id === kelas.wali_kelas_id) || null : null });
-  }, [selectedSiswa, selectedKelas]);
+  }, [selectedSiswa]);
 
   const handlePrint = () => {
     const me = Auth.current();
@@ -176,34 +223,101 @@ export default function CetakRaportPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Cetak Raport</h1>
 
         <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
-              <select value={selectedKelas} onChange={(e) => { setSelectedKelas(e.target.value); setSelectedSiswa(""); }} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+              <select value={selectedTingkat} onChange={(e) => setSelectedTingkat(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                 <option value="">-- Pilih Kelas --</option>
-                {kelasList.map(k => <option key={k.id} value={k.id}>{k.nama_rombel}</option>)}
+                {tingkatOptions.map(t => (
+                  <option key={t} value={t}>Kelas {toRoman(t)}</option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Siswa</label>
-              <select value={selectedSiswa} onChange={(e) => setSelectedSiswa(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                <option value="">-- Pilih Siswa --</option>
-                {siswaList.map(s => <option key={s.id} value={s.id}>{s.nama}</option>)}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Rombel</label>
+              <select value={selectedRombel} onChange={(e) => setSelectedRombel(e.target.value)} disabled={!selectedTingkat} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed">
+                <option value="">-- Semua Rombel --</option>
+                {rombelOptions.map(k => (
+                  <option key={k.id} value={k.id}>{k.nama_rombel || "-"}</option>
+                ))}
               </select>
-            </div>
-            <div className="flex items-end">
-              {raportData && (
-                <button onClick={handlePrint} className="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  <Printer size={16} /> Cetak / Print
-                </button>
-              )}
             </div>
           </div>
         </div>
+
+        {/* Daftar siswa: muncul kalau Kelas dipilih dan belum ada raport yang dipreview */}
+        {selectedTingkat && !raportData && (
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
+            <div className="p-4 border-b flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h2 className="font-semibold text-gray-900">Daftar Siswa</h2>
+                <p className="text-xs text-gray-500">{siswaList.length} siswa{selectedRombel ? "" : " (gabungan rombel)"}. Klik Detail di kanan untuk preview raport.</p>
+              </div>
+            </div>
+            {siswaList.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                {selectedRombel ? "Tidak ada siswa di rombel ini" : "Tidak ada siswa di kelas ini"}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left px-3 py-3 font-medium text-gray-600">No</th>
+                      <th className="text-left px-3 py-3 font-medium text-gray-600">Nama Siswa</th>
+                      <th className="text-left px-3 py-3 font-medium text-gray-600">NIS / NISN</th>
+                      <th className="text-left px-3 py-3 font-medium text-gray-600">Rombel</th>
+                      <th className="text-right px-3 py-3 font-medium text-gray-600">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {siswaList.map((siswa, idx) => {
+                      const kelas = kelasList.find(k => k.id === siswa.kelas_id);
+                      return (
+                        <tr key={siswa.id} className="border-b last:border-0 hover:bg-gray-50">
+                          <td className="px-3 py-2">{idx + 1}</td>
+                          <td className="px-3 py-2 font-medium">{siswa.nama}</td>
+                          <td className="px-3 py-2 text-gray-600 text-xs">{(siswa.nis || "-")} / {(siswa.nisn || "-")}</td>
+                          <td className="px-3 py-2 text-gray-600">{kelas?.nama_rombel || "-"}</td>
+                          <td className="px-3 py-2 text-right">
+                            <button
+                              onClick={() => setSelectedSiswa(siswa.id)}
+                              className="inline-flex items-center gap-1 bg-primary hover:bg-primary-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium"
+                              title="Lihat detail / preview raport"
+                            >
+                              <Eye size={14} /> Detail
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Toolbar saat preview raport aktif */}
+        {raportData && (
+          <div className="bg-white rounded-xl shadow-sm border p-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
+            <button
+              onClick={() => { setSelectedSiswa(""); setRaportData(null); }}
+              className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium"
+            >
+              <ArrowLeft size={16} /> Kembali ke daftar
+            </button>
+            <button onClick={handlePrint} className="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <Printer size={16} /> Cetak / Print
+            </button>
+          </div>
+        )}
       </div>
 
-      {!raportData ? (
-        <div className="text-center py-12 text-gray-400 print:hidden">Pilih kelas dan siswa untuk preview raport</div>
+      {!raportData && !selectedTingkat ? (
+        <div className="text-center py-12 text-gray-400 print:hidden">Pilih Kelas untuk menampilkan daftar siswa</div>
+      ) : !raportData ? (
+        <div className="print:hidden" />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border p-6 print:shadow-none print:border-0 print:p-0 raport-print-area">
           {/* KOP Madrasah */}
