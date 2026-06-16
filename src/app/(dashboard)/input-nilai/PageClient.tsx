@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Nilai, Siswa, MataPelajaran, Kelas, TujuanPembelajaran } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Save } from "lucide-react";
 
 function toRoman(n: number): string {
+  if (n === 12) return "XII";
+  if (n === 11) return "XI";
   const map: [number, string][] = [
     [10, "X"], [9, "IX"], [8, "VIII"], [7, "VII"], [6, "VI"],
     [5, "V"], [4, "IV"], [3, "III"], [2, "II"], [1, "I"],
-    [12, "XII"], [11, "XI"],
   ];
-  if (n === 12) return "XII";
-  if (n === 11) return "XI";
   for (const [v, s] of map) if (n === v) return s;
   return String(n);
 }
@@ -25,7 +24,8 @@ export default function InputNilaiPage() {
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [nilaiMap, setNilaiMap] = useState<Record<string, Nilai>>({});
 
-  const [selectedKelas, setSelectedKelas] = useState<string>("");
+  const [selectedTingkat, setSelectedTingkat] = useState<string>(""); // "1".."12"
+  const [selectedRombel, setSelectedRombel] = useState<string>("");   // kelas.id
   const [selectedMapel, setSelectedMapel] = useState("");
   const [selectedTp, setSelectedTp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,6 +36,28 @@ export default function InputNilaiPage() {
     setMapelList(demoStore.getMapel());
   }, []);
 
+  // Daftar tingkat unik dari rombel yang sudah dibuat
+  const tingkatOptions = useMemo(() => {
+    const set = new Set<number>();
+    kelasList.forEach(k => {
+      if (typeof k.tingkat === "number" && k.tingkat > 0) set.add(k.tingkat);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [kelasList]);
+
+  // Rombel yang tersedia untuk tingkat terpilih
+  const rombelOptions = useMemo(() => {
+    if (!selectedTingkat) return [] as Kelas[];
+    const t = Number(selectedTingkat);
+    return kelasList
+      .filter(k => k.tingkat === t)
+      .sort((a, b) => (a.nama_rombel || "").localeCompare(b.nama_rombel || ""));
+  }, [kelasList, selectedTingkat]);
+
+  // Reset rombel kalau tingkat berubah
+  useEffect(() => { setSelectedRombel(""); }, [selectedTingkat]);
+
+  // TP turunan dari mapel
   useEffect(() => {
     if (!selectedMapel) { setTpList([]); return; }
     const cpIds = demoStore.getCP().filter(cp => cp.mapel_id === selectedMapel).map(cp => cp.id);
@@ -43,20 +65,29 @@ export default function InputNilaiPage() {
     setTpList(tps);
   }, [selectedMapel]);
 
-  // Load siswa segera ketika kelas dipilih (tanpa harus pilih mapel+TP dulu)
+  // Daftar siswa: muncul setelah Tingkat dipilih.
+  // - Kalau Rombel belum dipilih: tampilkan semua siswa di tingkat itu (gabungan semua rombel)
+  // - Kalau Rombel dipilih: hanya siswa di rombel itu
   useEffect(() => {
-    if (!selectedKelas) { setSiswaList([]); setNilaiMap({}); return; }
+    if (!selectedTingkat) { setSiswaList([]); setNilaiMap({}); return; }
     const allSiswa = demoStore.getSiswa();
-    const siswa = allSiswa
-      .filter(s => s.kelas_id === selectedKelas)
-      .sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
+    const t = Number(selectedTingkat);
+    const kelasIdsAtTingkat = new Set(
+      kelasList.filter(k => k.tingkat === t).map(k => k.id)
+    );
+    let siswa: Siswa[];
+    if (selectedRombel) {
+      siswa = allSiswa.filter(s => s.kelas_id === selectedRombel);
+    } else {
+      siswa = allSiswa.filter(s => s.kelas_id && kelasIdsAtTingkat.has(s.kelas_id));
+    }
+    siswa = siswa.slice().sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
     setSiswaList(siswa);
-  }, [selectedKelas]);
+  }, [selectedTingkat, selectedRombel, kelasList]);
 
   const fetchNilai = useCallback(() => {
-    if (!selectedKelas) return;
+    if (!selectedTingkat) return;
     if (!selectedMapel || !selectedTp) {
-      // kelas saja sudah dipilih, tapi mapel/TP belum: kosongkan map nilai
       setNilaiMap({});
       return;
     }
@@ -70,7 +101,7 @@ export default function InputNilaiPage() {
       } else {
         map[s.id] = {
           id: demoStore.generateId(), siswa_id: s.id, mapel_id: selectedMapel,
-          kelas_id: selectedKelas, tp_id: selectedTp, semester: 1,
+          kelas_id: s.kelas_id || selectedRombel || "", tp_id: selectedTp, semester: 1,
           tahun_pelajaran: "2024/2025", nilai_formatif: 0, nilai_sumatif: 0,
           nilai_proyek: null, nilai_akhir: 0, predikat: "D", catatan_formatif: null,
           created_at: "", updated_at: "",
@@ -79,7 +110,7 @@ export default function InputNilaiPage() {
     });
     setNilaiMap(map);
     setLoading(false);
-  }, [selectedKelas, selectedMapel, selectedTp, siswaList]);
+  }, [selectedTingkat, selectedRombel, selectedMapel, selectedTp, siswaList]);
 
   useEffect(() => { fetchNilai(); }, [fetchNilai]);
 
@@ -119,19 +150,23 @@ export default function InputNilaiPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Input Nilai</h1>
 
       <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kelas (Rombel)</label>
-            <select value={selectedKelas} onChange={(e) => setSelectedKelas(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+            <select value={selectedTingkat} onChange={(e) => setSelectedTingkat(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
               <option value="">-- Pilih Kelas --</option>
-              {kelasList
-                .slice()
-                .sort((a, b) => ((a.tingkat || 0) - (b.tingkat || 0)) || (a.nama_rombel || "").localeCompare(b.nama_rombel || ""))
-                .map(k => (
-                  <option key={k.id} value={k.id}>
-                    {k.tingkat ? `Kelas ${toRoman(k.tingkat)} - ${k.nama_rombel}` : (k.nama_rombel || "-")}
-                  </option>
-                ))}
+              {tingkatOptions.map(t => (
+                <option key={t} value={t}>Kelas {toRoman(t)}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rombel</label>
+            <select value={selectedRombel} onChange={(e) => setSelectedRombel(e.target.value)} disabled={!selectedTingkat} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed">
+              <option value="">-- Semua Rombel --</option>
+              {rombelOptions.map(k => (
+                <option key={k.id} value={k.id}>{k.nama_rombel || "-"}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -143,7 +178,7 @@ export default function InputNilaiPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tujuan Pembelajaran</label>
-            <select value={selectedTp} onChange={(e) => setSelectedTp(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+            <select value={selectedTp} onChange={(e) => setSelectedTp(e.target.value)} disabled={!selectedMapel} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed">
               <option value="">-- Pilih TP --</option>
               {tpList.map(tp => <option key={tp.id} value={tp.id}>{tp.kode} - {tp.deskripsi.substring(0, 50)}</option>)}
             </select>
@@ -151,12 +186,14 @@ export default function InputNilaiPage() {
         </div>
       </div>
 
-      {!selectedKelas ? (
-        <div className="text-center py-12 text-gray-400">Pilih kelas untuk menampilkan daftar siswa</div>
+      {!selectedTingkat ? (
+        <div className="text-center py-12 text-gray-400">Pilih Kelas untuk menampilkan daftar siswa</div>
       ) : loading ? (
         <div className="text-center py-12 text-gray-400">Memuat...</div>
       ) : siswaList.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">Tidak ada siswa di kelas ini</div>
+        <div className="text-center py-12 text-gray-400">
+          {selectedRombel ? "Tidak ada siswa di rombel ini" : "Tidak ada siswa di kelas ini"}
+        </div>
       ) : (
         <>
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
@@ -166,7 +203,7 @@ export default function InputNilaiPage() {
                   <tr>
                     <th className="text-left px-3 py-3 font-medium text-gray-600">No</th>
                     <th className="text-left px-3 py-3 font-medium text-gray-600">Nama Siswa</th>
-                    <th className="text-left px-3 py-3 font-medium text-gray-600">Kelas / Rombel</th>
+                    <th className="text-left px-3 py-3 font-medium text-gray-600">Rombel</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Formatif</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Sumatif</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Proyek</th>
