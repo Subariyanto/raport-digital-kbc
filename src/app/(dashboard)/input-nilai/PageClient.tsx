@@ -6,6 +6,18 @@ import { Nilai, Siswa, MataPelajaran, Kelas, TujuanPembelajaran } from "@/lib/ty
 import toast from "react-hot-toast";
 import { Save } from "lucide-react";
 
+function toRoman(n: number): string {
+  const map: [number, string][] = [
+    [10, "X"], [9, "IX"], [8, "VIII"], [7, "VII"], [6, "VI"],
+    [5, "V"], [4, "IV"], [3, "III"], [2, "II"], [1, "I"],
+    [12, "XII"], [11, "XI"],
+  ];
+  if (n === 12) return "XII";
+  if (n === 11) return "XI";
+  for (const [v, s] of map) if (n === v) return s;
+  return String(n);
+}
+
 export default function InputNilaiPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
@@ -13,7 +25,7 @@ export default function InputNilaiPage() {
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [nilaiMap, setNilaiMap] = useState<Record<string, Nilai>>({});
 
-  const [selectedKelas, setSelectedKelas] = useState("");
+  const [selectedTingkat, setSelectedTingkat] = useState<string>(""); // simpan sebagai string biar gampang di select
   const [selectedMapel, setSelectedMapel] = useState("");
   const [selectedTp, setSelectedTp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,15 +47,22 @@ export default function InputNilaiPage() {
     if (!selectedMapel || !selectedTp) return;
     setLoading(true);
     const allSiswa = demoStore.getSiswa();
-    const siswa = selectedKelas
-      ? allSiswa.filter(s => s.kelas_id === selectedKelas)
-      : allSiswa.slice().sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
+    const allKelas = demoStore.getKelas();
+    const tingkatNum = selectedTingkat ? Number(selectedTingkat) : 0;
+    const kelasIdsForTingkat = tingkatNum
+      ? new Set(allKelas.filter(k => k.tingkat === tingkatNum).map(k => k.id))
+      : null;
+    const siswa = (
+      kelasIdsForTingkat
+        ? allSiswa.filter(s => s.kelas_id && kelasIdsForTingkat.has(s.kelas_id))
+        : allSiswa.slice()
+    ).sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
     setSiswaList(siswa);
 
     const allNilai = demoStore.getNilai();
     const map: Record<string, Nilai> = {};
     siswa.forEach(s => {
-      const kelasIdForNilai = s.kelas_id || selectedKelas || "";
+      const kelasIdForNilai = s.kelas_id || "";
       const existing = allNilai.find(n => n.siswa_id === s.id && n.mapel_id === selectedMapel && n.tp_id === selectedTp);
       if (existing) {
         map[s.id] = existing;
@@ -59,7 +78,7 @@ export default function InputNilaiPage() {
     });
     setNilaiMap(map);
     setLoading(false);
-  }, [selectedKelas, selectedMapel, selectedTp]);
+  }, [selectedTingkat, selectedMapel, selectedTp]);
 
   useEffect(() => { fetchNilai(); }, [fetchNilai]);
 
@@ -101,10 +120,14 @@ export default function InputNilaiPage() {
       <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
-            <select value={selectedKelas} onChange={(e) => setSelectedKelas(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">-- Semua Kelas --</option>
-              {kelasList.map(k => <option key={k.id} value={k.id}>{k.nama_rombel}</option>)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kelas / Tingkat</label>
+            <select value={selectedTingkat} onChange={(e) => setSelectedTingkat(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+              <option value="">-- Semua Tingkat --</option>
+              {Array.from(new Set(kelasList.map(k => k.tingkat).filter((t): t is number => typeof t === "number" && t > 0)))
+                .sort((a, b) => a - b)
+                .map(t => (
+                  <option key={t} value={t}>Kelas {toRoman(t)} ({t})</option>
+                ))}
             </select>
           </div>
           <div>
@@ -139,9 +162,7 @@ export default function InputNilaiPage() {
                   <tr>
                     <th className="text-left px-3 py-3 font-medium text-gray-600">No</th>
                     <th className="text-left px-3 py-3 font-medium text-gray-600">Nama Siswa</th>
-                    {!selectedKelas && (
-                      <th className="text-left px-3 py-3 font-medium text-gray-600">Kelas</th>
-                    )}
+                    <th className="text-left px-3 py-3 font-medium text-gray-600">Kelas / Rombel</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Formatif</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Sumatif</th>
                     <th className="text-center px-3 py-3 font-medium text-gray-600">Proyek</th>
@@ -158,9 +179,7 @@ export default function InputNilaiPage() {
                       <tr key={siswa.id} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="px-3 py-2">{idx + 1}</td>
                         <td className="px-3 py-2 font-medium">{siswa.nama}</td>
-                        {!selectedKelas && (
-                          <td className="px-3 py-2 text-gray-600">{kelas?.nama_rombel || "-"}</td>
-                        )}
+                        <td className="px-3 py-2 text-gray-600">{kelas?.nama_rombel || "-"}</td>
                         <td className="px-3 py-2"><input type="number" min={0} max={100} value={n.nilai_formatif || ""} onChange={(e) => updateNilai(siswa.id, "nilai_formatif", Number(e.target.value))} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-primary-500 outline-none" /></td>
                         <td className="px-3 py-2"><input type="number" min={0} max={100} value={n.nilai_sumatif || ""} onChange={(e) => updateNilai(siswa.id, "nilai_sumatif", Number(e.target.value))} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-primary-500 outline-none" /></td>
                         <td className="px-3 py-2"><input type="number" min={0} max={100} value={n.nilai_proyek || ""} onChange={(e) => updateNilai(siswa.id, "nilai_proyek", Number(e.target.value) || null)} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-primary-500 outline-none" /></td>
