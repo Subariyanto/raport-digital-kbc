@@ -240,6 +240,33 @@ export function generateCatatanWaliKelas(params: {
 }
 
 // ========================================
+// Preset Nama Kegiatan kokurikuler (Projek Profil Lulusan / P5)
+// Dipakai sebagai opsi dropdown di form input kokurikuler.
+// ========================================
+export const PRESET_NAMA_KEGIATAN_KOKURIKULER: string[] = [
+  "Projek Profil Lulusan: Bhinneka Tunggal Ika",
+  "Projek Profil Lulusan: Suara Demokrasi",
+  "Projek Profil Lulusan: Gaya Hidup Berkelanjutan",
+  "Projek Profil Lulusan: Kearifan Lokal",
+  "Projek Profil Lulusan: Bangunlah Jiwa dan Raganya",
+  "Projek Profil Lulusan: Berekayasa dan Berteknologi untuk NKRI",
+  "Projek Profil Lulusan: Kewirausahaan",
+  "Projek Profil Lulusan: Cinta Allah & Rasul",
+  "Projek Profil Lulusan: Cinta Ilmu",
+  "Projek Profil Lulusan: Cinta Sesama & Lingkungan",
+  "Pesantren Ramadhan / Pondok Ramadhan",
+  "Manasik Haji",
+  "Bakti Sosial",
+  "Studi Wisata / Karya Wisata",
+  "Outbound / Outing Class",
+  "Peringatan Hari Besar Islam (PHBI)",
+  "Peringatan Hari Besar Nasional (PHBN)",
+  "Class Meeting",
+  "Pekan Kreativitas Siswa",
+  "Lomba antar Kelas / Madrasah",
+];
+
+// ========================================
 // Preset keterangan kokurikuler (Tema P5 / Profil Lulusan KBC)
 // Dipakai sebagai opsi dropdown di form input kokurikuler.
 // ========================================

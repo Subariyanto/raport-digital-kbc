@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Kokurikuler } from "@/lib/types";
-import { nilaiToPredikat, PRESET_KETERANGAN_KOKURIKULER } from "@/lib/deskripsi-generator";
+import { nilaiToPredikat, PRESET_KETERANGAN_KOKURIKULER, PRESET_NAMA_KEGIATAN_KOKURIKULER } from "@/lib/deskripsi-generator";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
@@ -96,7 +96,7 @@ export default function KokurikulerPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Kokurikuler</h1>
-          <p className="text-sm text-gray-500">Projek Penguatan Profil Pelajar Pancasila Rahmatan lil Alamin (P5RA) & kegiatan kokurikuler lain.</p>
+          <p className="text-sm text-gray-500">Projek Penguatan Profil Lulusan & Nilai Cinta (kokurikuler) dan kegiatan kokurikuler lain.</p>
         </div>
         <button onClick={() => { setShowForm(true); setEditing(null); setForm({ nama_kegiatan: "", siswa_id: "", kelas_id: "", nilai: "", keterangan: "" }); }} className="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           <Plus size={16} /> Tambah Kokurikuler
@@ -161,7 +161,26 @@ export default function KokurikulerPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kegiatan *</label>
-                  <input type="text" value={form.nama_kegiatan} onChange={(e) => setForm({ ...form, nama_kegiatan: e.target.value })} required className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Projek P5RA: Bhinneka Tunggal Ika, dll" />
+                  <select
+                    value={PRESET_NAMA_KEGIATAN_KOKURIKULER.includes(form.nama_kegiatan) ? form.nama_kegiatan : (form.nama_kegiatan ? "__custom__" : "")}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "__custom__") {
+                        // biarkan textarea/input bawah dipakai untuk custom
+                        if (PRESET_NAMA_KEGIATAN_KOKURIKULER.includes(form.nama_kegiatan)) {
+                          setForm({ ...form, nama_kegiatan: "" });
+                        }
+                        return;
+                      }
+                      setForm({ ...form, nama_kegiatan: v });
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none mb-2"
+                  >
+                    <option value="">-- Pilih dari preset --</option>
+                    {PRESET_NAMA_KEGIATAN_KOKURIKULER.map(p => <option key={p} value={p}>{p}</option>)}
+                    <option value="__custom__">[Custom — ketik manual di kotak bawah]</option>
+                  </select>
+                  <input type="text" value={form.nama_kegiatan} onChange={(e) => setForm({ ...form, nama_kegiatan: e.target.value })} required className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Nama kegiatan (boleh diedit / custom)" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Siswa *</label>
