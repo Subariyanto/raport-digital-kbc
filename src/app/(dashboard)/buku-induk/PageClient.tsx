@@ -260,38 +260,48 @@ export default function BukuIndukPage() {
               {(() => {
                 const nilaiSiswa = demoStore.getNilai().filter(n => n.siswa_id === selectedSiswa.id);
                 const mapelList = demoStore.getMapel();
-                const tpList = demoStore.getTP();
                 if (nilaiSiswa.length === 0) return <p className="text-sm text-gray-400 italic">Belum ada data nilai</p>;
+                // Rata-rata per mapel
+                const grouped = new Map<string, { sum: number; count: number }>();
+                nilaiSiswa.forEach(n => {
+                  const v = Number(n.nilai_akhir);
+                  if (!isFinite(v)) return;
+                  const cur = grouped.get(n.mapel_id) || { sum: 0, count: 0 };
+                  cur.sum += v;
+                  cur.count += 1;
+                  grouped.set(n.mapel_id, cur);
+                });
+                const rows = Array.from(grouped.entries()).map(([mapel_id, agg]) => {
+                  const mapel = mapelList.find(m => m.id === mapel_id);
+                  const rata = agg.count > 0 ? agg.sum / agg.count : 0;
+                  const predikat = rata >= 90 ? "A" : rata >= 80 ? "B" : rata >= 70 ? "C" : "D";
+                  return { nama: mapel?.nama || "-", rata, predikat };
+                }).sort((a, b) => a.nama.localeCompare(b.nama));
+                if (rows.length === 0) return <p className="text-sm text-gray-400 italic">Belum ada data nilai</p>;
                 return (
                   <table className="w-full text-sm border border-gray-200 rounded">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-3 py-2 text-left border-b">Mata Pelajaran</th>
-                        <th className="px-3 py-2 text-left border-b">TP</th>
-                        <th className="px-3 py-2 text-center border-b">Nilai Akhir</th>
+                        <th className="px-3 py-2 text-center border-b">Rata-rata Nilai</th>
                         <th className="px-3 py-2 text-center border-b">Predikat</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {nilaiSiswa.map((n, i) => {
-                        const mapel = mapelList.find(m => m.id === n.mapel_id);
-                        const tp = tpList.find(t => t.id === n.tp_id);
-                        return (
-                          <tr key={i} className="border-b last:border-0">
-                            <td className="px-3 py-2">{mapel?.nama || "-"}</td>
-                            <td className="px-3 py-2">{tp?.kode || "-"}</td>
-                            <td className="px-3 py-2 text-center font-medium">{n.nilai_akhir}</td>
-                            <td className="px-3 py-2 text-center">
-                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                n.predikat === "A" ? "bg-green-100 text-green-700" :
-                                n.predikat === "B" ? "bg-blue-100 text-blue-700" :
-                                n.predikat === "C" ? "bg-yellow-100 text-yellow-700" :
-                                "bg-red-100 text-red-700"
-                              }`}>{n.predikat}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {rows.map((r, i) => (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="px-3 py-2">{r.nama}</td>
+                          <td className="px-3 py-2 text-center font-medium">{r.rata.toFixed(2)}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              r.predikat === "A" ? "bg-green-100 text-green-700" :
+                              r.predikat === "B" ? "bg-blue-100 text-blue-700" :
+                              r.predikat === "C" ? "bg-yellow-100 text-yellow-700" :
+                              "bg-red-100 text-red-700"
+                            }`}>{r.predikat}</span>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 );
