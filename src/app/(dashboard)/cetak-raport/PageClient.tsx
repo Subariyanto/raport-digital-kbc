@@ -129,7 +129,7 @@ export default function CetakRaportPage() {
             })
           : "");
 
-    setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks, tanggalCetak: demoStore.getTanggalCetak() });
+    setRaportData({ madrasah, siswa, kelas, nilaiPerMapel, presensi, ekskul, koko, catatan, deskKoko, deskEks, tanggalCetak: demoStore.getTanggalCetak(), waliKelas: kelas?.wali_kelas_id ? demoStore.getGuru().find(g => g.id === kelas.wali_kelas_id) || null : null });
   }, [selectedSiswa, selectedKelas]);
 
   const handlePrint = () => {
@@ -330,8 +330,8 @@ export default function CetakRaportPage() {
               <p>{`${raportData.madrasah.kabupaten || "..."}, ${formatTanggalIndo(raportData.tanggalCetak)}`}</p>
               <p>Wali Kelas</p>
               <div className="h-16"></div>
-              <p className="font-bold underline">................................</p>
-              <p>NIP. ................................</p>
+              <p className="font-bold underline">{raportData.waliKelas?.nama || "................................"}</p>
+              <p>NIP. {raportData.waliKelas?.nip_nuptk || "................................"}</p>
             </div>
           </div>
         </div>
