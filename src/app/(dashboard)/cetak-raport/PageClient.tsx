@@ -177,8 +177,8 @@ export default function CetakRaportPage() {
         <div className="text-center py-12 text-gray-400 print:hidden">Pilih kelas dan siswa untuk preview raport</div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border p-6 print:shadow-none print:border-0 print:p-0 raport-print-area">
-          {/* Header / KOP Madrasah */}
-          <div className="border-b-2 border-gray-800 pb-4 mb-4">
+          {/* KOP Madrasah */}
+          <div className="border-b-2 border-gray-800 pb-4 mb-3">
             <div className="flex items-center gap-4">
               {raportData.madrasah.logo_url ? (
                 <img
@@ -193,14 +193,16 @@ export default function CetakRaportPage() {
                 {raportData.madrasah.nama_yayasan && (
                   <p className="text-sm font-semibold uppercase">{raportData.madrasah.nama_yayasan}</p>
                 )}
-                <h2 className="text-lg font-bold uppercase">LAPORAN HASIL BELAJAR</h2>
-                <h3 className="text-base font-bold">{raportData.madrasah.nama}</h3>
+                <h3 className="text-base font-bold uppercase">{raportData.madrasah.nama}</h3>
                 <p className="text-sm text-gray-600">{raportData.madrasah.alamat}, {raportData.madrasah.desa}, {raportData.madrasah.kecamatan}</p>
                 <p className="text-sm text-gray-600">{raportData.madrasah.kabupaten}, {raportData.madrasah.provinsi}</p>
               </div>
               <div className="w-20 h-20 flex-shrink-0 hidden sm:block" />
             </div>
           </div>
+
+          {/* Judul (di bawah KOP, di bawah garis) */}
+          <h2 className="text-lg font-bold uppercase text-center mb-4">LAPORAN HASIL BELAJAR</h2>
 
           {/* Identitas Siswa */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm mb-6">
@@ -341,14 +343,12 @@ export default function CetakRaportPage() {
               <p>Kepala Madrasah</p>
               <div className="h-16"></div>
               <p className="font-bold underline">{raportData.madrasah.kepala_madrasah}</p>
-              <p>NIP. {raportData.madrasah.nip_kepala || "-"}</p>
             </div>
             <div className="text-center">
               <p>{`${raportData.madrasah.kabupaten || "..."}, ${formatTanggalIndo(raportData.tanggalCetak)}`}</p>
               <p>Wali Kelas</p>
               <div className="h-16"></div>
               <p className="font-bold underline">{raportData.waliKelas?.nama || "................................"}</p>
-              <p>NIP. {raportData.waliKelas?.nip_nuptk || "................................"}</p>
             </div>
           </div>
         </div>
