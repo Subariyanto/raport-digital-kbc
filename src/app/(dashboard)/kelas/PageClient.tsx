@@ -6,6 +6,15 @@ import { Kelas, Guru } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
+function toRoman(n: number): string {
+  const arr: [number, string][] = [
+    [12, "XII"], [11, "XI"], [10, "X"], [9, "IX"], [8, "VIII"],
+    [7, "VII"], [6, "VI"], [5, "V"], [4, "IV"], [3, "III"], [2, "II"], [1, "I"],
+  ];
+  for (const [v, s] of arr) if (n === v) return s;
+  return String(n);
+}
+
 export default function KelasPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [guruList, setGuruList] = useState<Pick<Guru, "id" | "nama">[]>([]);
@@ -100,7 +109,7 @@ export default function KelasPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">No</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Rombel</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Jenjang</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600 hidden sm:table-cell">Tingkat</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600 hidden sm:table-cell">Kelas</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600 hidden md:table-cell">Fase</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600 hidden lg:table-cell">Wali Kelas</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Aksi</th>
@@ -117,7 +126,7 @@ export default function KelasPage() {
                     <td className="px-4 py-3">{idx + 1}</td>
                     <td className="px-4 py-3 font-medium">{kelas.nama_rombel || "-"}</td>
                     <td className="px-4 py-3">{kelas.jenjang || "-"}</td>
-                    <td className="px-4 py-3 hidden sm:table-cell">{kelas.tingkat ?? "-"}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell">{kelas.tingkat ? toRoman(kelas.tingkat) : "-"}</td>
                     <td className="px-4 py-3 hidden md:table-cell">{kelas.fase || "-"}</td>
                     <td className="px-4 py-3 hidden lg:table-cell">{getWaliName(kelas.wali_kelas_id)}</td>
                     <td className="px-4 py-3">
@@ -151,8 +160,22 @@ export default function KelasPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tingkat</label>
-                    <input type="number" min={1} max={12} value={form.tingkat} onChange={(e) => setForm({ ...form, tingkat: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                    <select value={form.tingkat} onChange={(e) => setForm({ ...form, tingkat: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                      <option value={0}>-- Pilih --</option>
+                      <option value={1}>I (1)</option>
+                      <option value={2}>II (2)</option>
+                      <option value={3}>III (3)</option>
+                      <option value={4}>IV (4)</option>
+                      <option value={5}>V (5)</option>
+                      <option value={6}>VI (6)</option>
+                      <option value={7}>VII (7)</option>
+                      <option value={8}>VIII (8)</option>
+                      <option value={9}>IX (9)</option>
+                      <option value={10}>X (10)</option>
+                      <option value={11}>XI (11)</option>
+                      <option value={12}>XII (12)</option>
+                    </select>
                   </div>
                 </div>
                 <div>

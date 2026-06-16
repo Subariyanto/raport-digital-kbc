@@ -25,7 +25,7 @@ export default function InputNilaiPage() {
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [nilaiMap, setNilaiMap] = useState<Record<string, Nilai>>({});
 
-  const [selectedTingkat, setSelectedTingkat] = useState<string>(""); // simpan sebagai string biar gampang di select
+  const [selectedKelas, setSelectedKelas] = useState<string>("");
   const [selectedMapel, setSelectedMapel] = useState("");
   const [selectedTp, setSelectedTp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,32 +44,24 @@ export default function InputNilaiPage() {
   }, [selectedMapel]);
 
   const fetchNilai = useCallback(() => {
-    if (!selectedMapel || !selectedTp) return;
+    if (!selectedKelas || !selectedMapel || !selectedTp) return;
     setLoading(true);
     const allSiswa = demoStore.getSiswa();
-    const allKelas = demoStore.getKelas();
-    const tingkatNum = selectedTingkat ? Number(selectedTingkat) : 0;
-    const kelasIdsForTingkat = tingkatNum
-      ? new Set(allKelas.filter(k => k.tingkat === tingkatNum).map(k => k.id))
-      : null;
-    const siswa = (
-      kelasIdsForTingkat
-        ? allSiswa.filter(s => s.kelas_id && kelasIdsForTingkat.has(s.kelas_id))
-        : allSiswa.slice()
-    ).sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
+    const siswa = allSiswa
+      .filter(s => s.kelas_id === selectedKelas)
+      .sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
     setSiswaList(siswa);
 
     const allNilai = demoStore.getNilai();
     const map: Record<string, Nilai> = {};
     siswa.forEach(s => {
-      const kelasIdForNilai = s.kelas_id || "";
       const existing = allNilai.find(n => n.siswa_id === s.id && n.mapel_id === selectedMapel && n.tp_id === selectedTp);
       if (existing) {
         map[s.id] = existing;
       } else {
         map[s.id] = {
           id: demoStore.generateId(), siswa_id: s.id, mapel_id: selectedMapel,
-          kelas_id: kelasIdForNilai, tp_id: selectedTp, semester: 1,
+          kelas_id: selectedKelas, tp_id: selectedTp, semester: 1,
           tahun_pelajaran: "2024/2025", nilai_formatif: 0, nilai_sumatif: 0,
           nilai_proyek: null, nilai_akhir: 0, predikat: "D", catatan_formatif: null,
           created_at: "", updated_at: "",
@@ -78,7 +70,7 @@ export default function InputNilaiPage() {
     });
     setNilaiMap(map);
     setLoading(false);
-  }, [selectedTingkat, selectedMapel, selectedTp]);
+  }, [selectedKelas, selectedMapel, selectedTp]);
 
   useEffect(() => { fetchNilai(); }, [fetchNilai]);
 
@@ -120,13 +112,16 @@ export default function InputNilaiPage() {
       <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kelas / Tingkat</label>
-            <select value={selectedTingkat} onChange={(e) => setSelectedTingkat(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">-- Semua Tingkat --</option>
-              {Array.from(new Set(kelasList.map(k => k.tingkat).filter((t): t is number => typeof t === "number" && t > 0)))
-                .sort((a, b) => a - b)
-                .map(t => (
-                  <option key={t} value={t}>Kelas {toRoman(t)} ({t})</option>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kelas (Rombel)</label>
+            <select value={selectedKelas} onChange={(e) => setSelectedKelas(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+              <option value="">-- Pilih Kelas --</option>
+              {kelasList
+                .slice()
+                .sort((a, b) => ((a.tingkat || 0) - (b.tingkat || 0)) || (a.nama_rombel || "").localeCompare(b.nama_rombel || ""))
+                .map(k => (
+                  <option key={k.id} value={k.id}>
+                    {k.tingkat ? `Kelas ${toRoman(k.tingkat)} - ${k.nama_rombel}` : (k.nama_rombel || "-")}
+                  </option>
                 ))}
             </select>
           </div>
@@ -147,12 +142,12 @@ export default function InputNilaiPage() {
         </div>
       </div>
 
-      {!selectedMapel || !selectedTp ? (
-        <div className="text-center py-12 text-gray-400">Pilih mata pelajaran dan TP untuk input nilai</div>
+      {!selectedKelas || !selectedMapel || !selectedTp ? (
+        <div className="text-center py-12 text-gray-400">Pilih kelas, mata pelajaran, dan TP untuk input nilai</div>
       ) : loading ? (
         <div className="text-center py-12 text-gray-400">Memuat...</div>
       ) : siswaList.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">Tidak ada siswa</div>
+        <div className="text-center py-12 text-gray-400">Tidak ada siswa di kelas ini</div>
       ) : (
         <>
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
