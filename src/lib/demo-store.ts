@@ -51,6 +51,7 @@ const MADRASAH_ID = "11111111-1111-1111-1111-111111111111";
 const defaultMadrasah: Madrasah = {
   id: MADRASAH_ID,
   nama: "",
+  nama_yayasan: null,
   nsm: null,
   npsn: null,
   alamat: null,

@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { demoStore } from "@/lib/demo-store";
 import { Madrasah } from "@/lib/types";
 import toast from "react-hot-toast";
-import { Save, Sparkles, Trash2 } from "lucide-react";
+import { Save, Sparkles, Trash2, Upload } from "lucide-react";
 
 const CONTOH_FORM = {
   nama: "MI Contoh Madrasah Jember",
+  nama_yayasan: "Yayasan Pendidikan Islam Sukowono",
   nsm: "111235090001",
   npsn: "60714201",
   alamat: "Jl. Pendidikan No. 1",
@@ -19,12 +20,13 @@ const CONTOH_FORM = {
   nip_kepala: "196512311990031001",
   tahun_pelajaran: "2024/2025",
   semester: 1,
+  logo_url: "",
 };
 
 const EMPTY_FORM = {
-  nama: "", nsm: "", npsn: "", alamat: "", desa: "", kecamatan: "",
+  nama: "", nama_yayasan: "", nsm: "", npsn: "", alamat: "", desa: "", kecamatan: "",
   kabupaten: "", provinsi: "", kepala_madrasah: "", nip_kepala: "",
-  tahun_pelajaran: "2024/2025", semester: 1,
+  tahun_pelajaran: "2024/2025", semester: 1, logo_url: "",
 };
 
 export default function MadrasahPage() {
@@ -35,11 +37,12 @@ export default function MadrasahPage() {
   useEffect(() => {
     const m = demoStore.getMadrasah();
     setForm({
-      nama: m.nama || "", nsm: m.nsm || "", npsn: m.npsn || "",
+      nama: m.nama || "", nama_yayasan: (m as any).nama_yayasan || "", nsm: m.nsm || "", npsn: m.npsn || "",
       alamat: m.alamat || "", desa: m.desa || "", kecamatan: m.kecamatan || "",
       kabupaten: m.kabupaten || "", provinsi: m.provinsi || "",
       kepala_madrasah: m.kepala_madrasah || "", nip_kepala: m.nip_kepala || "",
       tahun_pelajaran: m.tahun_pelajaran || "2024/2025", semester: m.semester || 1,
+      logo_url: m.logo_url || "",
     });
     setLoading(false);
   }, []);
@@ -54,7 +57,7 @@ export default function MadrasahPage() {
   };
 
   const handleUseExample = () => {
-    const adaIsi = !!(form.nama || form.nsm || form.npsn || form.alamat || form.kepala_madrasah);
+    const adaIsi = !!(form.nama || form.nama_yayasan || form.nsm || form.npsn || form.alamat || form.kepala_madrasah);
     if (adaIsi) {
       const ok = confirm(
         "Form sudah ada isinya. Timpa dengan DATA CONTOH?\n\n" +
@@ -101,10 +104,75 @@ export default function MadrasahPage() {
 
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <form onSubmit={handleSave} className="space-y-5">
+          {/* Logo madrasah uploader */}
+          <div className="flex flex-col sm:flex-row items-start gap-4 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
+            <div className="flex-shrink-0">
+              {form.logo_url ? (
+                <img
+                  src={form.logo_url}
+                  alt="Logo Madrasah"
+                  className="w-24 h-24 object-contain bg-white border rounded-lg"
+                />
+              ) : (
+                <div className="w-24 h-24 flex items-center justify-center bg-white border rounded-lg text-gray-300 text-xs text-center px-2">
+                  Belum ada<br />logo
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Logo Madrasah</label>
+              <p className="text-xs text-gray-500 mb-2">
+                Format JPG/PNG, maks 500 KB. Logo akan tampil di kiri KOP Madrasah pada cetak raport.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                  <Upload size={16} />
+                  {form.logo_url ? "Ganti Logo" : "Upload Logo"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 500 * 1024) {
+                        toast.error("Ukuran logo maksimal 500 KB. Kompres dulu lalu upload ulang.");
+                        e.currentTarget.value = "";
+                        return;
+                      }
+                      const dataUrl = await new Promise<string>((res, rej) => {
+                        const r = new FileReader();
+                        r.onerror = () => rej(r.error);
+                        r.onload = () => res(r.result as string);
+                        r.readAsDataURL(file);
+                      });
+                      setForm({ ...form, logo_url: dataUrl });
+                      toast.success("Logo dimuat. Klik Simpan untuk menyimpan.");
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {form.logo_url && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, logo_url: "" })}
+                    className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium"
+                  >
+                    <Trash2 size={14} /> Hapus Logo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nama Madrasah</label>
               <input type="text" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Yayasan</label>
+              <input type="text" value={form.nama_yayasan} onChange={(e) => setForm({ ...form, nama_yayasan: e.target.value })} placeholder="Misal: Yayasan Pendidikan Islam ..." className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">NSM</label>

@@ -177,12 +177,29 @@ export default function CetakRaportPage() {
         <div className="text-center py-12 text-gray-400 print:hidden">Pilih kelas dan siswa untuk preview raport</div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border p-6 print:shadow-none print:border-0 print:p-0 raport-print-area">
-          {/* Header */}
-          <div className="text-center border-b-2 border-gray-800 pb-4 mb-4">
-            <h2 className="text-lg font-bold uppercase">LAPORAN HASIL BELAJAR</h2>
-            <h3 className="text-base font-bold">{raportData.madrasah.nama}</h3>
-            <p className="text-sm text-gray-600">{raportData.madrasah.alamat}, {raportData.madrasah.desa}, {raportData.madrasah.kecamatan}</p>
-            <p className="text-sm text-gray-600">{raportData.madrasah.kabupaten}, {raportData.madrasah.provinsi}</p>
+          {/* Header / KOP Madrasah */}
+          <div className="border-b-2 border-gray-800 pb-4 mb-4">
+            <div className="flex items-center gap-4">
+              {raportData.madrasah.logo_url ? (
+                <img
+                  src={raportData.madrasah.logo_url}
+                  alt="Logo Madrasah"
+                  className="w-20 h-20 object-contain flex-shrink-0"
+                />
+              ) : (
+                <div className="w-20 h-20 flex-shrink-0" />
+              )}
+              <div className="flex-1 text-center">
+                {raportData.madrasah.nama_yayasan && (
+                  <p className="text-sm font-semibold uppercase">{raportData.madrasah.nama_yayasan}</p>
+                )}
+                <h2 className="text-lg font-bold uppercase">LAPORAN HASIL BELAJAR</h2>
+                <h3 className="text-base font-bold">{raportData.madrasah.nama}</h3>
+                <p className="text-sm text-gray-600">{raportData.madrasah.alamat}, {raportData.madrasah.desa}, {raportData.madrasah.kecamatan}</p>
+                <p className="text-sm text-gray-600">{raportData.madrasah.kabupaten}, {raportData.madrasah.provinsi}</p>
+              </div>
+              <div className="w-20 h-20 flex-shrink-0 hidden sm:block" />
+            </div>
           </div>
 
           {/* Identitas Siswa */}

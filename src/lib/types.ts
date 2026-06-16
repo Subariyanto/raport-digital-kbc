@@ -9,6 +9,7 @@ export type UserRole =
 export interface Madrasah {
   id: string;
   nama: string;
+  nama_yayasan: string | null;
   nsm: string | null;
   npsn: string | null;
   alamat: string | null;
