@@ -137,13 +137,13 @@ export function generateDeskripsiKokurikuler(params: {
   const labelTertinggi = tertinggi ? nilaiToPredikat(tertinggi.nilai).label : null;
 
   if (rataRata !== null && rataRata >= 85) {
-    return `${nama} menunjukkan partisipasi yang sangat aktif dan kreatif dalam kegiatan kokurikuler ${daftar}. Penampilan dan hasil karya pada kegiatan ${tertinggi?.nama_kegiatan} terbilang ${labelTertinggi?.toLowerCase()}, mencerminkan kemandirian, kerja sama, serta penerapan dimensi Profil Pelajar Pancasila Rahmatan lil Alamin secara nyata. Pertahankan semangat berkarya.`;
+    return `${nama} menunjukkan partisipasi yang sangat aktif dan kreatif dalam kegiatan kokurikuler ${daftar}. Penampilan dan hasil karya pada kegiatan ${tertinggi?.nama_kegiatan} terbilang ${labelTertinggi?.toLowerCase()}, mencerminkan kemandirian, kerja sama, serta penerapan dimensi Profil Lulusan dan Nilai Cinta secara nyata. Pertahankan semangat berkarya.`;
   }
   if (rataRata !== null && rataRata >= 70) {
     return `${nama} terlibat dengan baik dalam kegiatan kokurikuler ${daftar}. Pada ${tertinggi?.nama_kegiatan}, ${nama} menunjukkan capaian yang ${labelTertinggi?.toLowerCase()}. Dorongan untuk lebih konsisten dan berani berinisiatif akan membantu pengembangan dimensi profil pelajar yang lebih utuh.`;
   }
   if (rataRata !== null) {
-    return `${nama} mulai mengenal dan terlibat dalam kegiatan kokurikuler ${daftar}. Diperlukan pendampingan agar lebih percaya diri, aktif, dan mampu mengaitkan kegiatan dengan nilai-nilai Profil Pelajar Pancasila Rahmatan lil Alamin.`;
+    return `${nama} mulai mengenal dan terlibat dalam kegiatan kokurikuler ${daftar}. Diperlukan pendampingan agar lebih percaya diri, aktif, dan mampu mengaitkan kegiatan dengan nilai-nilai Profil Lulusan dan Nilai Cinta.`;
   }
   // tanpa nilai
   return `${nama} mengikuti kegiatan kokurikuler ${daftar} sesuai jadwal madrasah. Partisipasi yang konsisten diharapkan dapat terus dipertahankan.`;
