@@ -234,7 +234,7 @@ export default function CetakRaportPage() {
           <h2 className="text-lg font-bold uppercase text-center mb-4">LAPORAN HASIL BELAJAR</h2>
 
           {/* Identitas Siswa (foto kiri + data kanan) */}
-          <div className="flex gap-4 mb-6">
+          <div className="flex gap-6 mb-6">
             <div className="flex-shrink-0">
               <div className="w-24 h-32 bg-gray-50 border-2 border-gray-300 rounded-md overflow-hidden flex items-center justify-center">
                 {raportData.siswa?.foto_url ? (
@@ -272,13 +272,41 @@ export default function CetakRaportPage() {
                 )}
               </div>
             </div>
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm">
-              <div className="flex"><span className="w-32 text-gray-600">Nama</span><span>: {raportData.siswa?.nama}</span></div>
-              <div className="flex"><span className="w-32 text-gray-600">NIS/NISN</span><span>: {raportData.siswa?.nis} / {raportData.siswa?.nisn}</span></div>
-              <div className="flex"><span className="w-32 text-gray-600">Kelas</span><span>: {raportData.kelas?.nama_rombel}</span></div>
-              <div className="flex"><span className="w-32 text-gray-600">Fase</span><span>: {raportData.kelas?.fase}</span></div>
-              <div className="flex"><span className="w-32 text-gray-600">Semester</span><span>: {raportData.kelas?.semester === 1 ? "1 (Ganjil)" : "2 (Genap)"}</span></div>
-              <div className="flex"><span className="w-32 text-gray-600">Tahun Pelajaran</span><span>: {raportData.kelas?.tahun_pelajaran}</span></div>
+            <div className="flex-1 self-center">
+              <table className="w-full text-sm border-separate" style={{ borderSpacing: "0 4px" }}>
+                <tbody>
+                  <tr>
+                    <td className="text-gray-600 align-top w-40">Nama</td>
+                    <td className="w-3 text-gray-600">:</td>
+                    <td className="font-medium">{raportData.siswa?.nama || "-"}</td>
+                  </tr>
+                  <tr>
+                    <td className="text-gray-600 align-top">NIS / NISN</td>
+                    <td className="text-gray-600">:</td>
+                    <td>{(raportData.siswa?.nis || "-")} / {(raportData.siswa?.nisn || "-")}</td>
+                  </tr>
+                  <tr>
+                    <td className="text-gray-600 align-top">Kelas</td>
+                    <td className="text-gray-600">:</td>
+                    <td>{raportData.kelas?.nama_rombel || "-"}</td>
+                  </tr>
+                  <tr>
+                    <td className="text-gray-600 align-top">Fase</td>
+                    <td className="text-gray-600">:</td>
+                    <td>{raportData.kelas?.fase || "-"}</td>
+                  </tr>
+                  <tr>
+                    <td className="text-gray-600 align-top">Semester</td>
+                    <td className="text-gray-600">:</td>
+                    <td>{raportData.kelas?.semester === 1 ? "1 (Ganjil)" : raportData.kelas?.semester === 2 ? "2 (Genap)" : "-"}</td>
+                  </tr>
+                  <tr>
+                    <td className="text-gray-600 align-top">Tahun Pelajaran</td>
+                    <td className="text-gray-600">:</td>
+                    <td>{raportData.kelas?.tahun_pelajaran || "-"}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
