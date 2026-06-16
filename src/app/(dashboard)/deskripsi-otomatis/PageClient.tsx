@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { demoStore } from "@/lib/demo-store";
 import {
   generateDeskripsi,
@@ -10,6 +10,17 @@ import {
 import { Siswa, MataPelajaran, Kelas, DeskripsiRapor } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Sparkles, Save, BookOpen, Trophy, Sparkle } from "lucide-react";
+
+function toRoman(n: number): string {
+  if (n === 12) return "XII";
+  if (n === 11) return "XI";
+  const map: [number, string][] = [
+    [10, "X"], [9, "IX"], [8, "VIII"], [7, "VII"], [6, "VI"],
+    [5, "V"], [4, "IV"], [3, "III"], [2, "II"], [1, "I"],
+  ];
+  for (const [v, s] of map) if (n === v) return s;
+  return String(n);
+}
 
 type Mode = "mapel" | "kokurikuler" | "ekstrakurikuler";
 
@@ -71,7 +82,8 @@ export default function DeskripsiOtomatisPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
-  const [selectedKelas, setSelectedKelas] = useState("");
+  const [selectedTingkat, setSelectedTingkat] = useState<string>("");
+  const [selectedRombel, setSelectedRombel] = useState<string>("");
   const [selectedMapel, setSelectedMapel] = useState("");
   const [deskripsiMap, setDeskripsiMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -82,14 +94,44 @@ export default function DeskripsiOtomatisPage() {
     setMapelList(demoStore.getMapel());
   }, []);
 
-  // Load existing deskripsi setiap mode/kelas/mapel berubah
+  const tingkatOptions = useMemo(() => {
+    const set = new Set<number>();
+    kelasList.forEach(k => {
+      if (typeof k.tingkat === "number" && k.tingkat > 0) set.add(k.tingkat);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [kelasList]);
+
+  const rombelOptions = useMemo(() => {
+    if (!selectedTingkat) return [] as Kelas[];
+    const t = Number(selectedTingkat);
+    return kelasList
+      .filter(k => k.tingkat === t)
+      .sort((a, b) => (a.nama_rombel || "").localeCompare(b.nama_rombel || ""));
+  }, [kelasList, selectedTingkat]);
+
+  // Reset rombel kalau tingkat berubah
+  useEffect(() => { setSelectedRombel(""); }, [selectedTingkat]);
+
+  // Load existing deskripsi setiap mode/tingkat/rombel/mapel berubah
   useEffect(() => {
-    if (!selectedKelas) {
+    if (!selectedTingkat) {
       setSiswaList([]);
       setDeskripsiMap({});
       return;
     }
-    const siswa = demoStore.getSiswa().filter((s) => s.kelas_id === selectedKelas);
+    const allSiswa = demoStore.getSiswa();
+    const t = Number(selectedTingkat);
+    const kelasIdsAtTingkat = new Set(
+      kelasList.filter(k => k.tingkat === t).map(k => k.id)
+    );
+    let siswa: Siswa[];
+    if (selectedRombel) {
+      siswa = allSiswa.filter(s => s.kelas_id === selectedRombel);
+    } else {
+      siswa = allSiswa.filter(s => s.kelas_id && kelasIdsAtTingkat.has(s.kelas_id));
+    }
+    siswa = siswa.slice().sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
     setSiswaList(siswa);
 
     const map: Record<string, string> = {};
@@ -101,22 +143,22 @@ export default function DeskripsiOtomatisPage() {
       const all = demoStore.getDeskripsi();
       siswa.forEach((s) => {
         const found = all.find(
-          (d) => d.siswa_id === s.id && d.mapel_id === selectedMapel && d.kelas_id === selectedKelas
+          (d) => d.siswa_id === s.id && d.mapel_id === selectedMapel
         );
         if (found) map[s.id] = found.deskripsi_text || "";
       });
     } else {
       const all = readAux(STORE_KEYS[mode]);
       siswa.forEach((s) => {
-        const found = all.find((d) => d.siswa_id === s.id && d.kelas_id === selectedKelas);
+        const found = all.find((d) => d.siswa_id === s.id);
         if (found) map[s.id] = found.deskripsi_text || "";
       });
     }
     setDeskripsiMap(map);
-  }, [mode, selectedKelas, selectedMapel]);
+  }, [mode, selectedTingkat, selectedRombel, selectedMapel, kelasList]);
 
   const handleGenerate = () => {
-    if (!selectedKelas) {
+    if (!selectedTingkat) {
       toast.error("Pilih kelas terlebih dahulu");
       return;
     }
@@ -138,7 +180,7 @@ export default function DeskripsiOtomatisPage() {
 
       siswaList.forEach((siswa) => {
         const nilaiSiswa = allNilai.filter(
-          (n) => n.siswa_id === siswa.id && n.mapel_id === selectedMapel && n.kelas_id === selectedKelas
+          (n) => n.siswa_id === siswa.id && n.mapel_id === selectedMapel
         );
         const nilaiAkhir =
           nilaiSiswa.length > 0
@@ -186,7 +228,7 @@ export default function DeskripsiOtomatisPage() {
       const allKoko = demoStore.getKokurikuler();
       siswaList.forEach((siswa) => {
         const kegiatan = allKoko
-          .filter((k) => k.siswa_id === siswa.id && k.kelas_id === selectedKelas)
+          .filter((k) => k.siswa_id === siswa.id)
           .map((k) => ({
             nama_kegiatan: k.nama_kegiatan,
             nilai: k.nilai,
@@ -201,7 +243,7 @@ export default function DeskripsiOtomatisPage() {
       const allEks = demoStore.getEkskul();
       siswaList.forEach((siswa) => {
         const kegiatan = allEks
-          .filter((k) => k.siswa_id === siswa.id && k.kelas_id === selectedKelas)
+          .filter((k) => k.siswa_id === siswa.id)
           .map((k) => ({
             nama_kegiatan: k.nama_kegiatan,
             nilai: (k as any).nilai ?? null,
@@ -221,21 +263,23 @@ export default function DeskripsiOtomatisPage() {
 
   const handleSave = () => {
     setLoading(true);
+    const targetSiswaIds = new Set(siswaList.map(s => s.id));
 
     if (mode === "mapel") {
       const allDesk = demoStore.getDeskripsi();
+      // Hanya hapus deskripsi mapel ini untuk siswa yang sedang ditampilkan
       const filtered = allDesk.filter(
-        (d) => !(d.kelas_id === selectedKelas && d.mapel_id === selectedMapel)
+        (d) => !(d.mapel_id === selectedMapel && targetSiswaIds.has(d.siswa_id))
       );
-      const newEntries = Object.entries(deskripsiMap).map(([siswaId, deskripsi]) => ({
+      const newEntries = siswaList.map((s) => ({
         id: demoStore.generateId(),
-        siswa_id: siswaId,
+        siswa_id: s.id,
         mapel_id: selectedMapel,
-        kelas_id: selectedKelas,
+        kelas_id: s.kelas_id || "",
         semester: 1,
         tahun_pelajaran: "2024/2025",
         metode: "tp" as const,
-        deskripsi_text: deskripsi,
+        deskripsi_text: deskripsiMap[s.id] || "",
         is_locked: false,
         generated_at: new Date().toISOString(),
         edited_at: null,
@@ -246,19 +290,17 @@ export default function DeskripsiOtomatisPage() {
     } else {
       const key = STORE_KEYS[mode];
       const all = readAux(key);
-      const filtered = all.filter((d) => d.kelas_id !== selectedKelas);
-      const newEntries: DeskAux[] = Object.entries(deskripsiMap).map(
-        ([siswaId, deskripsi]) => ({
-          id: demoStore.generateId(),
-          siswa_id: siswaId,
-          kelas_id: selectedKelas,
-          semester: 1,
-          tahun_pelajaran: "2024/2025",
-          deskripsi_text: deskripsi,
-          created_at: "",
-          updated_at: "",
-        })
-      );
+      const filtered = all.filter((d) => !targetSiswaIds.has(d.siswa_id));
+      const newEntries: DeskAux[] = siswaList.map((s) => ({
+        id: demoStore.generateId(),
+        siswa_id: s.id,
+        kelas_id: s.kelas_id || "",
+        semester: 1,
+        tahun_pelajaran: "2024/2025",
+        deskripsi_text: deskripsiMap[s.id] || "",
+        created_at: "",
+        updated_at: "",
+      }));
       writeAux(key, [...filtered, ...newEntries]);
     }
 
@@ -304,21 +346,33 @@ export default function DeskripsiOtomatisPage() {
       <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
         <div
           className={`grid grid-cols-1 ${
-            mode === "mapel" ? "sm:grid-cols-3" : "sm:grid-cols-2"
+            mode === "mapel" ? "sm:grid-cols-4" : "sm:grid-cols-3"
           } gap-4`}
         >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
             <select
-              value={selectedKelas}
-              onChange={(e) => setSelectedKelas(e.target.value)}
+              value={selectedTingkat}
+              onChange={(e) => setSelectedTingkat(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
             >
               <option value="">-- Pilih Kelas --</option>
-              {kelasList.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.nama_rombel}
-                </option>
+              {tingkatOptions.map((t) => (
+                <option key={t} value={t}>Kelas {toRoman(t)}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rombel</label>
+            <select
+              value={selectedRombel}
+              onChange={(e) => setSelectedRombel(e.target.value)}
+              disabled={!selectedTingkat}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">-- Semua Rombel --</option>
+              {rombelOptions.map((k) => (
+                <option key={k.id} value={k.id}>{k.nama_rombel || "-"}</option>
               ))}
             </select>
           </div>
@@ -344,7 +398,7 @@ export default function DeskripsiOtomatisPage() {
               onClick={handleGenerate}
               disabled={
                 generating ||
-                !selectedKelas ||
+                !selectedTingkat ||
                 (mode === "mapel" && !selectedMapel)
               }
               className="flex items-center gap-2 bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
@@ -355,32 +409,38 @@ export default function DeskripsiOtomatisPage() {
         </div>
       </div>
 
-      {siswaList.length === 0 ? (
+      {!selectedTingkat ? (
         <div className="text-center py-12 text-gray-400">
-          {mode === "mapel"
-            ? "Pilih kelas dan mata pelajaran untuk generate deskripsi"
-            : "Pilih kelas untuk generate deskripsi"}
+          Pilih Kelas untuk menampilkan daftar siswa
+        </div>
+      ) : siswaList.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">
+          {selectedRombel ? "Tidak ada siswa di rombel ini" : "Tidak ada siswa di kelas ini"}
         </div>
       ) : (
         <>
           <div className="space-y-3">
-            {siswaList.map((siswa, idx) => (
-              <div key={siswa.id} className="bg-white rounded-xl shadow-sm border p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-sm font-bold text-gray-500">{idx + 1}.</span>
-                  <span className="font-medium text-gray-900">{siswa.nama}</span>
+            {siswaList.map((siswa, idx) => {
+              const kelas = kelasList.find(k => k.id === siswa.kelas_id);
+              return (
+                <div key={siswa.id} className="bg-white rounded-xl shadow-sm border p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-sm font-bold text-gray-500">{idx + 1}.</span>
+                    <span className="font-medium text-gray-900">{siswa.nama}</span>
+                    <span className="text-xs text-gray-500">({kelas?.nama_rombel || "-"})</span>
+                  </div>
+                  <textarea
+                    value={deskripsiMap[siswa.id] || ""}
+                    onChange={(e) =>
+                      setDeskripsiMap((prev) => ({ ...prev, [siswa.id]: e.target.value }))
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                    placeholder="Deskripsi akan muncul setelah generate..."
+                  />
                 </div>
-                <textarea
-                  value={deskripsiMap[siswa.id] || ""}
-                  onChange={(e) =>
-                    setDeskripsiMap((prev) => ({ ...prev, [siswa.id]: e.target.value }))
-                  }
-                  rows={3}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                  placeholder="Deskripsi akan muncul setelah generate..."
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-4">
             <button
