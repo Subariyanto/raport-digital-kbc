@@ -41,9 +41,19 @@ export default function CatatanWaliKelasPage() {
   const rombelOptions = useMemo(() => {
     if (!selectedTingkat) return [] as Kelas[];
     const t = Number(selectedTingkat);
-    return kelasList
+    const seen = new Set<string>();
+    const list: Kelas[] = [];
+    kelasList
       .filter(k => k.tingkat === t)
-      .sort((a, b) => (a.nama_rombel || "").localeCompare(b.nama_rombel || ""));
+      .sort((a, b) => (a.nama_rombel || "").localeCompare(b.nama_rombel || ""))
+      .forEach(k => {
+        const key = (k.nama_rombel || "").trim().toLowerCase();
+        if (!key) return;
+        if (seen.has(key)) return;
+        seen.add(key);
+        list.push(k);
+      });
+    return list;
   }, [kelasList, selectedTingkat]);
 
   // Reset rombel kalau tingkat berubah
@@ -59,7 +69,14 @@ export default function CatatanWaliKelasPage() {
     );
     let siswa: Siswa[];
     if (selectedRombel) {
-      siswa = allSiswa.filter(s => s.kelas_id === selectedRombel);
+      const targetKelas = kelasList.find(k => k.id === selectedRombel);
+      const targetRombelKey = (targetKelas?.nama_rombel || "").trim().toLowerCase();
+      const sameRombelIds = new Set(
+        kelasList
+          .filter(k => k.tingkat === t && (k.nama_rombel || "").trim().toLowerCase() === targetRombelKey)
+          .map(k => k.id)
+      );
+      siswa = allSiswa.filter(s => s.kelas_id && sameRombelIds.has(s.kelas_id));
     } else {
       siswa = allSiswa.filter(s => s.kelas_id && kelasIdsAtTingkat.has(s.kelas_id));
     }
