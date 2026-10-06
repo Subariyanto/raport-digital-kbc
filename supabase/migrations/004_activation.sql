@@ -219,7 +219,7 @@ AS $$
 DECLARE
   v_acc RECORD;
 BEGIN
-  SELECT id, username, nama, nip, msd, kabupaten, role, tier, is_active, activation_code
+  SELECT id, username, nama, nip, msd, kabupaten, role, tier, is_active, activation_code, password_hash
   INTO v_acc
   FROM rdmkbc_accounts
   WHERE LOWER(username) = LOWER(p_username)
