@@ -61,8 +61,8 @@ function CodesClient() {
   const refresh = useCallback(() => setTick((x) => x + 1), []);
 
   useEffect(() => {
-    // Get admin username from session
-    const sess = Auth.getAdminSession();
+    // Get admin username from session (auto-fill dari login admin bila perlu)
+    const sess = Auth.ensureAdminSession();
     if (sess) setAdminUser(sess.username);
   }, []);
 

@@ -328,6 +328,21 @@ export const Auth = {
     const id = (identifier || "").trim();
     if (!id || !password) throw new Error("Username/Email/NIP dan password wajib diisi");
 
+    // Admin bypass: admin selalu login lokal (server RPC login hanya untuk akun user).
+    const idAdmin = id.toLowerCase();
+    if (idAdmin === ADMIN_DEFAULT_USERNAME || idAdmin === ADMIN_DEFAULT_EMAIL) {
+      const adminUsers = readUsers();
+      const au = adminUsers.find((u) => u.role === "admin" && (u.username || "").toLowerCase() === idAdmin);
+      if (au) {
+        const ah = await sha256Hex(password);
+        if (ah !== au.passwordHash) throw new Error("Password salah");
+        Auth.setAdminSession(au.username || ADMIN_DEFAULT_USERNAME);
+        const aw = safeWindow();
+        if (aw) aw.localStorage.setItem(KEY_SESSION, au.id);
+        return au;
+      }
+    }
+
     // Try server first (by username)
     if (SupabaseActivation.hasConfig()) {
       try {
@@ -481,6 +496,23 @@ export const Auth = {
     const username = w.localStorage.getItem(KEY_ADMIN_USERNAME);
     if (!loggedIn || !username) return null;
     return { username };
+  },
+
+  /**
+   * Pastikan admin session tersedia. Kalau admin sedang login (role admin)
+   * tapi admin-session (username untuk RPC) belum di-set, isi otomatis.
+   * Dipakai halaman admin codes agar generate/list kode tidak gagal senyap.
+   */
+  ensureAdminSession(): { username: string } | null {
+    const existing = Auth.getAdminSession();
+    if (existing) return existing;
+    const cur = Auth.current();
+    if (cur && cur.role === "admin") {
+      const uname = cur.username || ADMIN_DEFAULT_USERNAME;
+      Auth.setAdminSession(uname);
+      return { username: uname };
+    }
+    return null;
   },
 
   setAdminSession(username: string) {

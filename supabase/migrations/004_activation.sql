@@ -74,10 +74,14 @@ ON CONFLICT (username) DO NOTHING;
 -- =====================================================================
 -- HELPER: generate random code segment (8 chars, exclude I/O/0/1)
 -- =====================================================================
+-- NOTE: JANGAN tandai VOLATILE function yang memakai random() sebagai IMMUTABLE.
+-- random() bersifat volatile; menandainya IMMUTABLE membuat planner Postgres
+-- meng-cache hasilnya sehingga loop pencarian keunikan kode tidak pernah selesai
+-- (menyebabkan statement timeout di PostgREST).
 CREATE OR REPLACE FUNCTION public.rdmkbc_generate_code_segment()
 RETURNS TEXT
 LANGUAGE sql
-IMMUTABLE
+VOLATILE
 AS $$
   SELECT string_agg(
     substring(
