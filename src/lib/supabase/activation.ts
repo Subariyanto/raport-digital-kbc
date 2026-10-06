@@ -179,3 +179,45 @@ export async function adminStats(adminUsername: string) {
     p_admin_username: adminUsername,
   });
 }
+
+// --- ADMIN: ACCOUNT MANAGEMENT ---
+
+export async function adminListAccounts(adminUsername: string) {
+  return callRpc("rdmkbc_admin_list_accounts", {
+    p_admin_username: adminUsername,
+  });
+}
+
+export async function adminSetAccountActive(
+  adminUsername: string,
+  accountId: number,
+  isActive: boolean
+) {
+  return callRpc("rdmkbc_admin_set_account_active", {
+    p_admin_username: adminUsername,
+    p_account_id: accountId,
+    p_is_active: isActive,
+  });
+}
+
+export async function adminDeleteAccount(
+  adminUsername: string,
+  accountId: number
+) {
+  return callRpc("rdmkbc_admin_delete_account", {
+    p_admin_username: adminUsername,
+    p_account_id: accountId,
+  });
+}
+
+export async function adminResetAccountPassword(
+  adminUsername: string,
+  accountId: number,
+  newPasswordHash: string
+) {
+  return callRpc("rdmkbc_admin_reset_account_password", {
+    p_admin_username: adminUsername,
+    p_account_id: accountId,
+    p_new_password_hash: newPasswordHash,
+  });
+}

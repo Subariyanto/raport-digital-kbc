@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Auth, type AppUser } from "@/lib/auth";
-import { Users as UsersIcon, KeyRound, ShoppingCart, ArrowLeft, RefreshCw } from "lucide-react";
+import { Users as UsersIcon, KeyRound, ShoppingCart, ArrowLeft, RefreshCw, UserCog } from "lucide-react";
 
 export function AdminGuard({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -45,10 +45,11 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export function AdminTabs({ active }: { active: "users" | "codes" | "purchase" | "sync" }) {
+export function AdminTabs({ active }: { active: "users" | "codes" | "accounts" | "purchase" | "sync" }) {
   const tabs = [
     { id: "users", label: "Kelola User", href: "/admin/users", icon: <UsersIcon size={16} /> },
     { id: "codes", label: "Kode Aktivasi", href: "/admin/codes", icon: <KeyRound size={16} /> },
+    { id: "accounts", label: "Akun", href: "/admin/accounts", icon: <UserCog size={16} /> },
     { id: "purchase", label: "Pengaturan Pembelian", href: "/admin/pembelian", icon: <ShoppingCart size={16} /> },
     { id: "sync", label: "Sinkronisasi", href: "/admin/sinkronisasi", icon: <RefreshCw size={16} /> },
   ] as const;

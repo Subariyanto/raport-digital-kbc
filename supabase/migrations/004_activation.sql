@@ -519,3 +519,144 @@ REVOKE ALL ON public.rdmkbc_accounts FROM anon, authenticated;
 
 -- Grant usage on sequence (for admin seed if needed)
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+-- =====================================================================
+-- RPC: rdmkbc_admin_list_accounts
+-- Daftar semua akun terdaftar (tanpa password_hash).
+-- =====================================================================
+CREATE OR REPLACE FUNCTION public.rdmkbc_admin_list_accounts(
+  p_admin_username TEXT DEFAULT NULL
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Validasi admin
+  IF NOT EXISTS (SELECT 1 FROM rdmkbc_admins WHERE LOWER(username) = LOWER(p_admin_username)) THEN
+    RETURN json_build_object('ok', false, 'status', 'UNAUTHORIZED', 'message', 'Admin tidak valid');
+  END IF;
+
+  RETURN json_build_object(
+    'ok', true,
+    'data', COALESCE(
+      (
+        SELECT json_agg(row_to_json(t))
+        FROM (
+          SELECT
+            a.id,
+            a.username,
+            a.nama,
+            a.nip,
+            a.msd,
+            a.kabupaten,
+            a.role,
+            a.tier,
+            a.is_active,
+            a.activation_code,
+            a.created_at,
+            a.last_login_at
+          FROM rdmkbc_accounts a
+          ORDER BY a.created_at DESC
+        ) t
+      ),
+      '[]'::json
+    )
+  );
+END;
+$$;
+
+-- =====================================================================
+-- RPC: rdmkbc_admin_set_account_active
+-- Aktifkan / nonaktifkan akun.
+-- =====================================================================
+CREATE OR REPLACE FUNCTION public.rdmkbc_admin_set_account_active(
+  p_admin_username TEXT DEFAULT NULL,
+  p_account_id     BIGINT,
+  p_is_active      BOOLEAN
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM rdmkbc_admins WHERE LOWER(username) = LOWER(p_admin_username)) THEN
+    RETURN json_build_object('ok', false, 'status', 'UNAUTHORIZED', 'message', 'Admin tidak valid');
+  END IF;
+
+  UPDATE rdmkbc_accounts
+  SET is_active = p_is_active
+  WHERE id = p_account_id;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object('ok', false, 'status', 'NOT_FOUND', 'message', 'Akun tidak ditemukan');
+  END IF;
+
+  RETURN json_build_object(
+    'ok', true,
+    'status', 'OK',
+    'message', CASE WHEN p_is_active THEN 'Akun diaktifkan' ELSE 'Akun dinonaktifkan' END
+  );
+END;
+$$;
+
+-- =====================================================================
+-- RPC: rdmkbc_admin_delete_account
+-- Hapus akun. Kode aktivasi tetap 'used' (tidak dikembalikan ke active).
+-- =====================================================================
+CREATE OR REPLACE FUNCTION public.rdmkbc_admin_delete_account(
+  p_admin_username TEXT DEFAULT NULL,
+  p_account_id     BIGINT
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM rdmkbc_admins WHERE LOWER(username) = LOWER(p_admin_username)) THEN
+    RETURN json_build_object('ok', false, 'status', 'UNAUTHORIZED', 'message', 'Admin tidak valid');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM rdmkbc_accounts WHERE id = p_account_id) THEN
+    RETURN json_build_object('ok', false, 'status', 'NOT_FOUND', 'message', 'Akun tidak ditemukan');
+  END IF;
+
+  DELETE FROM rdmkbc_accounts WHERE id = p_account_id;
+
+  RETURN json_build_object('ok', true, 'status', 'OK', 'message', 'Akun dihapus');
+END;
+$$;
+
+-- =====================================================================
+-- RPC: rdmkbc_admin_reset_account_password
+-- Reset password akun (password_hash baru diberikan oleh client).
+-- =====================================================================
+CREATE OR REPLACE FUNCTION public.rdmkbc_admin_reset_account_password(
+  p_admin_username   TEXT DEFAULT NULL,
+  p_account_id       BIGINT,
+  p_new_password_hash TEXT
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM rdmkbc_admins WHERE LOWER(username) = LOWER(p_admin_username)) THEN
+    RETURN json_build_object('ok', false, 'status', 'UNAUTHORIZED', 'message', 'Admin tidak valid');
+  END IF;
+
+  UPDATE rdmkbc_accounts
+  SET password_hash = p_new_password_hash
+  WHERE id = p_account_id;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object('ok', false, 'status', 'NOT_FOUND', 'message', 'Akun tidak ditemukan');
+  END IF;
+
+  RETURN json_build_object('ok', true, 'status', 'OK', 'message', 'Password akun berhasil direset');
+END;
+$$;
