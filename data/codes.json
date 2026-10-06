@@ -20,6 +20,13 @@
       "status": "active",
       "createdAt": "2026-10-06T11:53:39.119Z",
       "note": null
+    },
+    {
+      "code": "FULL-VP6K-PAET-9P4R",
+      "prefix": "FULL",
+      "status": "active",
+      "createdAt": "2026-10-06T11:57:20.604Z",
+      "note": null
     }
   ],
   "purchase": {
@@ -32,5 +39,5 @@
     "orderTemplate": "Halo, saya ingin pesan lisensi {APP}.\nNama: \nNIP: \nMadrasah: \n\nSilakan kirim kode aktivasi ke nomor ini, terima kasih 🙏",
     "sendTemplate": "Halo {NAMA},\n\nBerikut kode aktivasi {APP}:\n\nKode: {KODE}\n\nLangkah:\n1. Buka {URL}\n2. Klik Daftar\n3. Isi NIP {NIP}, kode aktivasi, dan password\n\nTerima kasih 🙏"
   },
-  "updatedAt": "2026-10-06T11:56:57.776Z"
+  "updatedAt": "2026-10-06T11:57:20.925Z"
 }
