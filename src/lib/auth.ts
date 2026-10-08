@@ -88,6 +88,19 @@ export const Auth = {
           u.tier = "admin";
           changed = true;
         }
+        // Normalisasi akun admin lama: pastikan username & email terisi
+        // agar cabang login admin (yang mencocokkan field username/email)
+        // tetap menemukannya. Akun lama kadang hanya punya email saja.
+        if (u.role === "admin") {
+          if (!u.username) {
+            u.username = ADMIN_DEFAULT_USERNAME;
+            changed = true;
+          }
+          if (!u.email) {
+            u.email = ADMIN_DEFAULT_EMAIL;
+            changed = true;
+          }
+        }
         if (u.role === "admin" && u.passwordHash === OLD_PASS_HASH) {
           u.passwordHash = newHash;
           changed = true;
